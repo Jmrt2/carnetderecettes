@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Recettes">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#E7D9C8">
+<title>Mes Recettes</title>
+<style>
+/* ============ TOKENS — palette « Mediterranean Calm » ============
+   Terracotta Glow #C28B6A · Sunwashed Linen #E7D9C8 · Warm Sand #DCC8B2
+   Olive Mist #B6B49C · Sage Garden #98A084 · Deep Olive #667055
+   Thème clair unique, pensé pour la lisibilité en extérieur.
+   Contrastes WCAG AA : texte blanc uniquement sur Deep Olive (5,2:1) et terracotta foncé (5,3:1). */
+:root {
+  --linen: #E7D9C8;
+  --sand: #DCC8B2;
+  --clay: #C28B6A;
+  --olive-mist: #B6B49C;
+  --sage: #98A084;
+  --olive: #667055;
+
+  --bg: var(--linen);            /* fond de page */
+  --surface: #F7F1E9;            /* cartes, champs (linen éclairci) */
+  --soft: var(--sand);           /* boutons secondaires, puces */
+  --soft-press: #CDB79E;
+  --text: #2E2A24;               /* brun olive très foncé : 10,3:1 sur linen */
+  --muted: #5E564B;              /* 5,2:1 sur linen */
+  --line: #D2C1AB;
+
+  --accent: var(--olive);        /* actions principales */
+  --accent-press: #525A43;
+  --clay-deep: #9C5B3A;          /* sélection, suppression, pastilles numérotées */
+  --clay-tint: #EFDDD0;
+  --clay-ink: #7A4A2F;           /* texte terracotta lisible : 5,3:1 */
+  --olive-tint: #E3E3D3;
+  --olive-ink: #4A5240;
+  --success: var(--olive);
+  --shop: var(--olive);
+  --shop-press: #525A43;
+
+  --backdrop: rgba(46, 42, 36, 0.5);
+  --shadow: 0 1px 3px rgba(46, 42, 36, 0.12);
+  --radius: 16px;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --serif: ui-serif, 'New York', 'Iowan Old Style', Georgia, 'Noto Serif', 'Times New Roman', serif;
+  color-scheme: light;
+}
+
+/* ============ BASE ============ */
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html {
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;          /* pas de zoom au double-tap */
+  overscroll-behavior-y: none;         /* pas de pull-to-refresh accidentel */
+}
+html.is-locked, html.is-locked body { overflow: hidden; }
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.5 var(--font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+button, input, textarea { font: inherit; color: inherit; }
+button { border: 0; background: none; padding: 0; cursor: pointer; touch-action: manipulation; }
+img { display: block; max-width: 100%; }
+:focus { outline: none; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Boutons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 52px; padding: 0 16px; border-radius: 14px;
+  font-weight: 700; font-size: 16px; text-decoration: none;
+  transition: background-color .15s ease, transform .15s ease;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:active { background: var(--accent-press); }
+.btn-soft { background: var(--soft); color: var(--text); }
+.btn-soft:active { background: var(--soft-press); }
+.btn-danger { background: var(--clay-tint); color: var(--clay-ink); }
+.btn-danger:active { background: var(--soft-press); }
+.icon-btn {
+  position: relative; display: grid; place-items: center; flex-shrink: 0;
+  width: 48px; height: 48px; border-radius: 50%; font-size: 22px;
+}
+.icon-btn:active { background: var(--soft-press); }
+
+/* ============ HEADER STICKY (56px) ============ */
+.appbar {
+  position: sticky; top: 0; z-index: 20;
+  padding: var(--safe-t) calc(8px + var(--safe-r)) 0 calc(16px + var(--safe-l));
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.bar { display: flex; align-items: center; gap: 8px; height: 56px; }
+.bar h1 { flex: 1; min-width: 0; margin: 0; font-family: var(--serif); font-size: 22px; font-weight: 600; letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-search { padding-right: 8px; }
+.bar-search input {
+  flex: 1; min-width: 0; height: 48px; padding: 0 16px;
+  border: 2px solid var(--accent); border-radius: 12px; background: var(--surface);
+  font-size: 16px; -webkit-appearance: none; appearance: none;
+}
+.bar-search input::-webkit-search-cancel-button { display: none; }
+.text-btn { min-height: 48px; min-width: 48px; padding: 0 8px; font-weight: 700; color: var(--clay-ink); }
+.count-badge {
+  position: absolute; top: 0; right: 0; min-width: 24px; height: 24px; padding: 0 6px;
+  border-radius: 10px; background: var(--clay-deep); color: #fff;
+  font-size: 16px; font-weight: 700; line-height: 24px; text-align: center;
+}
+
+/* ============ CONTENU ============ */
+main { padding: 16px calc(16px + var(--safe-r)) calc(120px + var(--safe-b)) calc(16px + var(--safe-l)); }
+
+/* Barre des saisons : 4 boutons, re-toucher la saison active = toutes saisons */
+.seasons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.season-btn {
+  position: relative; display: flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 56px; padding: 0 12px; border-radius: 14px; background: var(--soft);
+  font-size: 16px; font-weight: 700; line-height: 1.2;
+}
+.season-btn .emo { font-size: 22px; line-height: 1; }
+.season-btn:active { background: var(--soft-press); }
+.season-btn[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.now-dot { position: absolute; top: 8px; right: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--clay); box-shadow: 0 0 0 2px var(--soft); }
+.season-btn[aria-pressed="true"] .now-dot { box-shadow: 0 0 0 2px var(--accent); }
+
+.summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px; }
+.summary .count { margin: 0 8px 0 0; color: var(--muted); font-size: 16px; font-weight: 600; }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 16px;
+  border-radius: 22px; background: var(--clay-tint); color: var(--clay-ink); font-size: 16px; font-weight: 700;
+}
+.pill:active { background: var(--soft-press); }
+
+/* ============ GRILLE 2 COLONNES (répartition équilibrée en JS) ============ */
+.grid { display: flex; align-items: flex-start; gap: 12px; }
+.col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.card {
+  position: relative; border-radius: var(--radius); overflow: hidden;
+  background: transparent; box-shadow: var(--shadow);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+.swipe-hint {
+  position: absolute; inset: 0; display: none; background: var(--clay-deep); align-items: center; justify-content: flex-end;
+  padding-right: 16px; color: #fff; font-weight: 800; font-size: 16px;
+}
+.card-inner {
+  position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  touch-action: pan-y;                  /* scroll vertical natif, geste horizontal pour nous */
+  transition: transform .25s ease;
+}
+.card.is-swiping .card-inner { transition: none; }
+.card.is-swiping .swipe-hint, .card.is-removing .swipe-hint { display: flex; }
+.card.is-armed .swipe-hint { font-size: 16px; }
+.card-inner:active { background: var(--soft); }
+.media { position: relative; overflow: hidden; background: var(--tint, var(--soft)); border-radius: 15px 15px 0 0; }
+.media img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; opacity: 0; transition: opacity .25s ease; }
+.media.is-loaded img { opacity: 1; }
+.media:not(.is-loaded)::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+@keyframes shimmer { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+.ph { display: grid; place-items: center; width: 100%; font-size: 44px; }
+.card-body { padding: 12px 16px 16px; }
+.card-title { margin: 0 0 8px; font-family: var(--serif); font-size: 17px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 16px; color: var(--muted); }
+.time { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.badge { display: inline-flex; align-items: center; min-height: 30px; padding: 0 10px; border-radius: 15px; background: var(--soft); color: var(--text); font-size: 16px; font-weight: 700; white-space: nowrap; }
+.badge[data-cat="Quick"] { background: var(--olive-mist); color: var(--text); }
+.badge[data-cat="Dessert"] { background: var(--clay-tint); color: var(--clay-ink); }
+
+/* Skeleton de chargement */
+.skeleton .card-inner { pointer-events: none; }
+.sk-line { height: 16px; border-radius: 8px; background: var(--soft); margin-bottom: 8px; }
+.sk-line.short { width: 60%; margin-bottom: 0; }
+
+/* ============ EMPTY STATE ============ */
+.empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 32px 16px; }
+.empty-illu { position: relative; display: grid; place-items: center; width: 160px; height: 160px; margin-bottom: 24px; border-radius: 50%; background: var(--soft); font-size: 72px; }
+.empty-illu span { position: absolute; font-size: 32px; }
+.empty-illu span:nth-child(1) { top: 8px; right: 8px; }
+.empty-illu span:nth-child(2) { bottom: 12px; left: 4px; }
+.empty h2 { margin: 0 0 8px; font-family: var(--serif); font-size: 22px; font-weight: 600; }
+.empty p { margin: 0 0 24px; color: var(--muted); max-width: 32ch; }
+
+/* ============ BOUTON + (pouce) ============ */
+.fab {
+  position: fixed; z-index: 30;
+  right: calc(20px + var(--safe-r)); bottom: calc(20px + var(--safe-b));
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--accent); color: #fff; font-size: 36px; font-weight: 300; line-height: 1;
+  box-shadow: 0 4px 14px rgba(82, 90, 67, .4);
+  transition: transform .15s ease, background-color .15s ease;
+}
+.fab:active { transform: scale(0.92); background: var(--accent-press); }
+
+/* ============ ÉCRANS PLEIN ÉCRAN ============ */
+.sheet {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  transform: translateY(100%);
+  transition: transform .28s cubic-bezier(.2, .8, .2, 1);
+  will-change: transform;
+}
+.sheet.is-open { transform: none; }
+.sheet-head {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  padding: var(--safe-t) calc(8px + var(--safe-r)) 0 calc(8px + var(--safe-l));
+  min-height: calc(56px + var(--safe-t));
+  border-bottom: 1px solid var(--line);
+}
+.sheet-head h2 { flex: 1; margin: 0; font-family: var(--serif); font-size: 20px; font-weight: 600; text-align: center; }
+.head-spacer { width: 48px; flex-shrink: 0; }
+.sheet-scroll {
+  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  padding: 16px calc(16px + var(--safe-r)) 24px calc(16px + var(--safe-l));
+}
+.sheet-bar {
+  display: grid; gap: 8px; flex-shrink: 0;
+  padding: 12px calc(16px + var(--safe-r)) calc(12px + var(--safe-b)) calc(16px + var(--safe-l));
+  border-top: 1px solid var(--line); background: var(--bg);
+}
+.bar-2 { grid-template-columns: 1fr 2fr; }
+.bar-3 { grid-template-columns: repeat(3, 1fr); }
+.bar-3 .btn { flex-direction: column; gap: 0; min-height: 60px; padding: 4px; font-size: 16px; line-height: 1.3; }
+.bar-3 .btn .emo { font-size: 20px; }
+
+/* Détail */
+.detail-scroll { padding: 0 0 24px; }
+.hero-wrap { position: relative; }
+.hero { position: relative; aspect-ratio: 4 / 5; max-height: 56vh; width: 100%; background: var(--tint, var(--soft)); }
+.hero img, .hero .ph { width: 100%; height: 100%; object-fit: contain; }
+.hero .ph { font-size: 96px; }
+.hero-close {
+  position: absolute; top: calc(8px + var(--safe-t)); left: calc(12px + var(--safe-l));
+  background: rgba(247, 241, 233, .95); color: var(--text); box-shadow: 0 2px 8px rgba(46, 42, 36, .2);
+}
+.detail-content { padding: 24px calc(16px + var(--safe-r)) 0 calc(16px + var(--safe-l)); }
+.detail-content h2 { margin: 0 0 12px; font-family: var(--serif); font-size: 22px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.detail-content .meta { font-size: 17px; gap: 8px 16px; margin-bottom: 8px; }
+.detail-seasons { margin: 0 0 24px; color: var(--muted); font-weight: 600; }
+.section { margin-bottom: 32px; }
+.section h3 { margin: 0 0 8px; font-size: 16px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--clay-ink); }
+.ing-list { list-style: none; margin: 0; padding: 0; }
+.ing { display: flex; align-items: center; gap: 16px; min-height: 52px; padding: 8px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+.ing input { width: 24px; height: 24px; margin: 0; flex-shrink: 0; accent-color: var(--olive-ink); }
+.ing input:checked + span { color: var(--muted); text-decoration: line-through; }
+.steps { list-style: none; margin: 0; padding: 0; counter-reset: s; }
+.steps li { position: relative; counter-increment: s; padding: 8px 0 16px 48px; line-height: 1.6; }
+.steps li::before {
+  content: counter(s); position: absolute; left: 0; top: 6px;
+  width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--clay-deep); color: #fff; font-weight: 800; font-size: 16px;
+}
+.muted-note { margin: 0; color: var(--muted); font-style: italic; }
+.source-link { width: 100%; }
+
+/* Formulaire */
+.form { display: grid; gap: 24px; }
+.field { display: grid; gap: 8px; min-width: 0; border: 0; margin: 0; padding: 0; }
+.field > label, .field legend { padding: 0; font-weight: 700; }
+.hint { font-weight: 400; color: var(--muted); }
+.input {
+  width: 100%; min-height: 48px; padding: 12px 16px;
+  border: 2px solid var(--line); border-radius: 12px; background: var(--surface);
+  font-size: 16px; -webkit-appearance: none; appearance: none;
+}
+textarea.input { min-height: 144px; resize: vertical; line-height: 1.5; }
+.input:focus { border-color: var(--accent); }
+.field.is-invalid .input { border-color: var(--accent); background: var(--clay-tint); }
+.error { margin: 0; color: var(--clay-ink); font-weight: 700; }
+.field-status { margin: 0; font-size: 16px; color: var(--muted); }
+.field-status.is-error { color: var(--clay-ink); font-weight: 600; }
+.field-status.is-ok { color: var(--olive-ink); font-weight: 600; }
+.photo-row { display: flex; gap: 12px; align-items: flex-start; }
+.photo-row .input { flex: 1; min-width: 0; }
+.photo-preview { width: 64px; aspect-ratio: 4 / 5; flex-shrink: 0; border-radius: 10px; overflow: hidden; background: var(--soft); display: grid; place-items: center; font-size: 24px; }
+.photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.options { display: flex; flex-wrap: wrap; gap: 8px; }
+.opt { position: relative; }
+.opt input { position: absolute; opacity: 0; inset: 0; margin: 0; }
+.opt span {
+  display: inline-flex; align-items: center; min-height: 48px; padding: 0 16px;
+  border: 2px solid var(--line); border-radius: 24px; background: var(--surface); font-weight: 600;
+}
+.opt input:checked + span { border-color: var(--accent); background: var(--accent); color: #fff; }
+.opt.season input:checked + span { border-color: var(--olive-ink); background: var(--olive-tint); color: var(--olive-ink); }
+.opt input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.stepper { display: grid; grid-template-columns: 48px 1fr 48px; gap: 8px; align-items: center; }
+.stepper .input { text-align: center; padding: 12px 4px; }
+.stepper button { height: 48px; border-radius: 12px; background: var(--soft); font-size: 22px; font-weight: 700; }
+.stepper button:active { background: var(--soft-press); }
+.filter-count { margin: 0; font-weight: 600; color: var(--muted); }
+
+/* ============ ACTION SHEET (menu appui long + confirmations) ============ */
+.action-layer { position: fixed; inset: 0; z-index: 60; }
+.action-backdrop { position: absolute; inset: 0; background: var(--backdrop); opacity: 0; transition: opacity .2s ease; }
+.action-panel {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; justify-content: flex-end; gap: 12px;
+  padding: calc(24px + var(--safe-t)) calc(16px + var(--safe-r)) calc(16px + var(--safe-b)) calc(16px + var(--safe-l));
+  background: var(--bg); overflow-y: auto;
+  transform: translateY(100%); transition: transform .25s cubic-bezier(.2, .8, .2, 1);
+}
+.action-layer.is-open .action-backdrop { opacity: 1; }
+.action-layer.is-open .action-panel { transform: none; }
+.action-group { border-radius: 16px; overflow: hidden; background: var(--surface); }
+.action-head { padding: 24px 16px; text-align: center; border-bottom: 1px solid var(--line); }
+.action-head p { margin: 0; }
+.action-title { font-family: var(--serif); font-size: 22px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.action-msg { color: var(--muted); margin-top: 4px !important; }
+.action-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; min-height: 64px; padding: 0 16px; background: var(--surface);
+  font-size: 18px; font-weight: 600; color: var(--text);
+}
+.action-group .action-btn + .action-btn { border-top: 1px solid var(--line); }
+.action-btn.is-danger { color: var(--clay-ink); }
+.action-btn:active { background: var(--soft-press); }
+.action-cancel { border-radius: 16px; font-weight: 800; }
+
+/* ============ TOASTS (bas d'écran) ============ */
+.toasts {
+  position: fixed; z-index: 70; left: calc(16px + var(--safe-l)); right: calc(16px + var(--safe-r));
+  bottom: calc(96px + var(--safe-b));
+  display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none;
+}
+.toast {
+  display: flex; align-items: center; gap: 12px; width: 100%; max-width: 420px;
+  min-height: 52px; padding: 4px 8px 4px 16px; border-radius: 14px;
+  color: #fff; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,.25);
+  pointer-events: auto; animation: toast-in .2s ease;
+}
+.toast span { flex: 1; padding: 8px 0; }
+.toast.success { background: var(--success); }
+.toast.error { background: var(--clay-deep); }
+.toast button { min-height: 48px; min-width: 48px; padding: 0 12px; border-radius: 10px; color: #fff; font-weight: 800; text-decoration: underline; }
+.toast button:active { background: rgba(255,255,255,.2); }
+.toast.is-leaving { opacity: 0; transition: opacity .2s ease; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+/* ============ SÉLECTION DES RECETTES ============ */
+.select-btn {
+  position: absolute; top: 0; left: 0; z-index: 3; transition: opacity .15s ease;
+  width: 56px; height: 56px; display: grid; place-items: center;
+}
+.select-btn .circle {
+  display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(247, 241, 233, .95); border: 2px solid var(--muted); box-shadow: 0 1px 3px rgba(46, 42, 36, .25);
+  color: #fff; font-size: 16px; font-weight: 900; line-height: 1;
+}
+.select-btn .tick { opacity: 0; transform: scale(.4); transition: opacity .18s ease, transform .18s cubic-bezier(.3,1.6,.5,1); }
+.card.is-selected .select-btn .circle { background: var(--clay-deep); border-color: var(--clay-deep); }
+.card.is-selected .select-btn .tick { opacity: 1; transform: scale(1); }
+.select-btn:active .circle { transform: scale(.9); }
+.card.is-swiping .select-btn, .card.is-removing .select-btn { opacity: 0; pointer-events: none; }
+.card-inner::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  border-radius: var(--radius); border: 3px solid transparent; transition: border-color .15s ease, background-color .15s ease;
+}
+.card.is-selected .card-inner::after { border-color: var(--clay); background: rgba(194, 139, 106, .14); }
+.title-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.title-wrap h1 { flex: none; line-height: 1.2; }
+.sel-count { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; font-size: 16px; font-weight: 700; color: var(--clay-ink); line-height: 1.3; }
+
+/* ============ BARRE « LISTE DE COURSES » (bas d'écran) ============ */
+.cart-bar {
+  position: fixed; z-index: 25; left: 0; right: 0; bottom: 0;
+  padding: 8px calc(12px + var(--safe-r)) calc(8px + var(--safe-b)) calc(12px + var(--safe-l));
+  background: var(--bg); border-top: 1px solid var(--line);
+}
+.cart-open {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 8px 16px;
+  border-radius: 16px; background: var(--shop); color: #fff; text-align: left;
+}
+.cart-open:active { background: var(--shop-press); }
+.cart-open .cart-emo { font-size: 26px; }
+.cart-open .cart-txt { flex: 1; min-width: 0; white-space: nowrap; display: flex; flex-direction: column; line-height: 1.3; }
+.cart-open strong { font-size: 17px; }
+.cart-open #cart-sub { font-size: 16px; opacity: .95; }
+.cart-open .cart-go { font-weight: 800; }
+html.has-cart main { padding-bottom: calc(200px + var(--safe-b)); }
+html.has-cart .fab { bottom: calc(96px + var(--safe-b)); }
+html.has-cart .toasts { bottom: calc(172px + var(--safe-b)); }
+
+/* ============ ÉCRAN LISTE DE COURSES ============ */
+.shop-head { background: var(--shop); color: #fff; border-bottom: 0; }
+.shop-head .icon-btn:active { background: var(--shop-press); }
+.shop-head .head-title { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; line-height: 1.25; }
+.shop-head h2 { flex: none; font-size: 20px; }
+.shop-badge { margin-top: 2px; padding: 0 10px; border-radius: 12px; background: rgba(255,255,255,.2); font-size: 16px; font-weight: 700; }
+.shop-count { min-width: 48px; text-align: center; font-weight: 800; font-variant-numeric: tabular-nums; }
+.shop-recipes { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.shop-recipe small { font-size: 16px; font-weight: 600; opacity: .85; }
+.shop-progress-bar { height: 8px; border-radius: 4px; background: var(--soft); overflow: hidden; }
+.shop-progress-bar span { display: block; height: 100%; background: var(--sage); transition: width .25s ease; }
+.shop-hint { margin: 8px 0 8px; font-size: 16px; color: var(--muted); }
+.shop-list { list-style: none; margin: 0 -16px; padding: 0; }
+.shop-row {
+  position: relative; background: var(--bg); border-bottom: 1px solid var(--line);
+  touch-action: pan-y; transition: transform .2s ease, background-color .2s ease;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+.shop-row.is-swiping { transition: none; background: var(--olive-tint); }
+.shop-row.is-armed { background: var(--sage); color: var(--text); }
+.shop-item { display: flex; align-items: center; gap: 16px; min-height: 56px; padding: 12px 16px; cursor: pointer; }
+.shop-item input { width: 24px; height: 24px; margin: 0; flex-shrink: 0; accent-color: var(--shop); }
+.shop-text { display: flex; flex-direction: column; min-width: 0; }
+.shop-name { font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+.shop-from { font-size: 16px; color: var(--muted); }
+.shop-row.is-bought .shop-text { opacity: .5; }
+.shop-row.is-bought .shop-name { text-decoration: line-through; }
+.shop-restore { width: 100%; margin-top: 16px; }
+.bar-shop { grid-template-columns: 1fr 1fr 1fr; }
+.bar-shop .btn { flex-direction: column; gap: 0; min-height: 60px; padding: 4px; font-size: 16px; line-height: 1.3; }
+.bar-shop .btn .emo { font-size: 20px; }
+.btn-shop { background: var(--shop); color: #fff; }
+.btn-shop:active { background: var(--shop-press); }
+.detail-shop { width: 100%; margin-bottom: 24px; }
+.detail-shop[aria-pressed="true"] { background: var(--olive-tint); color: var(--olive-ink); }
+
+/* Tablette (rare) : on garde 2 colonnes, on centre simplement le contenu */
+@media (min-width: 700px) {
+  main, .appbar .bar { max-width: 680px; margin-left: auto; margin-right: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Header sticky -->
+  <header class="appbar">
+    <div class="bar" id="bar-main">
+      <div class="title-wrap">
+        <h1>🍳 Mes Recettes</h1>
+        <p class="sel-count" id="sel-count" aria-live="polite" hidden></p>
+      </div>
+      <button class="icon-btn" id="btn-search" type="button" aria-label="Rechercher">🔍</button>
+      <button class="icon-btn" id="btn-filters" type="button" aria-label="Filtres">⚙️<span class="count-badge" id="filter-badge" hidden></span></button>
+      <button class="icon-btn" id="btn-more" type="button" aria-label="Plus d’options">⋯</button>
+    </div>
+    <div class="bar bar-search" id="bar-search" role="search" hidden>
+      <label for="search-input" class="sr-only">Rechercher une recette ou un ingrédient</label>
+      <input id="search-input" type="search" placeholder="Recette, ingrédient…" autocomplete="off" autocorrect="off" enterkeyhint="search">
+      <button class="text-btn" id="search-cancel" type="button">Annuler</button>
+    </div>
+  </header>
+
+  <main>
+    <nav class="seasons" id="season-bar" aria-label="Filtrer par saison"></nav>
+    <div class="summary" id="summary" aria-live="polite"></div>
+
+    <!-- Skeleton affiché le temps du premier rendu -->
+    <div class="grid" id="grid" aria-busy="true">
+      <div class="col">
+        <div class="card skeleton" aria-hidden="true"><div class="card-inner"><div class="media" style="aspect-ratio:4/5"></div><div class="card-body"><div class="sk-line"></div><div class="sk-line short"></div></div></div></div>
+        <div class="card skeleton" aria-hidden="true"><div class="card-inner"><div class="media" style="aspect-ratio:3/4"></div><div class="card-body"><div class="sk-line"></div><div class="sk-line short"></div></div></div></div>
+      </div>
+      <div class="col">
+        <div class="card skeleton" aria-hidden="true"><div class="card-inner"><div class="media" style="aspect-ratio:3/4"></div><div class="card-body"><div class="sk-line"></div><div class="sk-line short"></div></div></div></div>
+        <div class="card skeleton" aria-hidden="true"><div class="card-inner"><div class="media" style="aspect-ratio:4/5"></div><div class="card-body"><div class="sk-line"></div><div class="sk-line short"></div></div></div></div>
+      </div>
+    </div>
+    <div class="empty" id="empty" hidden></div>
+  </main>
+
+  <button class="fab" id="fab" type="button" aria-label="Ajouter une recette">+</button>
+
+  <!-- Barre qui apparaît dès qu'une recette est sélectionnée -->
+  <div class="cart-bar" id="cart-bar" hidden>
+    <button class="cart-open" id="cart-open" type="button">
+      <span class="cart-emo" aria-hidden="true">🛒</span>
+      <span class="cart-txt"><strong>Liste de courses</strong><span id="cart-sub"></span></span>
+      <span class="cart-go" aria-hidden="true">Voir ›</span>
+    </button>
+  </div>
+</div>
+
+<!-- ============ LISTE DE COURSES (plein écran, scroll indépendant) ============ -->
+<section class="sheet" id="shop-sheet" role="dialog" aria-modal="true" aria-labelledby="shop-title" hidden>
+  <div class="sheet-head shop-head">
+    <button class="icon-btn" type="button" data-close aria-label="Fermer la liste">⌄</button>
+    <div class="head-title">
+      <h2 id="shop-title" tabindex="-1">🛒 Liste de courses</h2>
+      <span class="shop-badge">Pour 2 personnes</span>
+    </div>
+    <button class="icon-btn" type="button" id="shop-copy-top" aria-label="Copier la liste">📋</button>
+  </div>
+  <div class="sheet-scroll" id="shop-body"></div>
+  <div class="sheet-bar bar-shop">
+    <button class="btn btn-soft" type="button" id="shop-reset"><span class="emo" aria-hidden="true">↺</span>Décocher</button>
+    <button class="btn btn-danger" type="button" id="shop-clear"><span class="emo" aria-hidden="true">✕</span>Vider</button>
+    <button class="btn btn-shop" type="button" id="shop-copy"><span class="emo" aria-hidden="true">📋</span>Copier</button>
+  </div>
+  <p class="sr-only" id="shop-progress" aria-live="polite"></p>
+</section>
+
+<!-- ============ DÉTAIL (plein écran) ============ -->
+<section class="sheet" id="detail-sheet" role="dialog" aria-modal="true" aria-labelledby="detail-title" hidden>
+  <div class="sheet-scroll detail-scroll" id="detail-body"></div>
+  <div class="sheet-bar bar-3">
+    <button class="btn btn-soft" type="button" id="detail-edit"><span class="emo" aria-hidden="true">✏️</span>Modifier</button>
+    <button class="btn btn-danger" type="button" id="detail-delete"><span class="emo" aria-hidden="true">🗑️</span>Supprimer</button>
+    <button class="btn btn-primary" type="button" data-close><span class="emo" aria-hidden="true">✓</span>Fermer</button>
+  </div>
+</section>
+
+<!-- ============ AJOUT / ÉDITION (plein écran) ============ -->
+<section class="sheet" id="form-sheet" role="dialog" aria-modal="true" aria-labelledby="form-title" hidden>
+  <div class="sheet-head">
+    <button class="icon-btn" type="button" data-close aria-label="Fermer sans enregistrer">✕</button>
+    <h2 id="form-title" tabindex="-1">Nouvelle recette</h2>
+    <span class="head-spacer"></span>
+  </div>
+  <form class="sheet-scroll form" id="recipe-form" novalidate>
+    <div class="field" id="field-title">
+      <label for="f-title">Titre <span class="hint">(obligatoire)</span></label>
+      <input class="input" id="f-title" type="text" maxlength="120" autocomplete="off" enterkeyhint="next" placeholder="Ex. Tarte aux pommes" aria-describedby="title-error">
+      <p class="error" id="title-error" role="alert" hidden>Donnez un titre à votre recette.</p>
+    </div>
+
+    <div class="field">
+      <label for="f-image">Photo <span class="hint">(lien, optionnel)</span></label>
+      <div class="photo-row">
+        <input class="input" id="f-image" type="url" inputmode="url" autocomplete="off" autocapitalize="off" placeholder="https://…/photo.jpg" aria-describedby="photo-status">
+        <div class="photo-preview" id="photo-preview" aria-hidden="true">🖼️</div>
+      </div>
+      <p class="field-status" id="photo-status" aria-live="polite">Collez le lien d’une image (.jpg, .png, .webp).</p>
+    </div>
+
+    <fieldset class="field">
+      <legend>Catégorie</legend>
+      <div class="options" id="f-categories"></div>
+    </fieldset>
+
+    <div class="row-2">
+      <div class="field">
+        <label for="f-time">Temps</label>
+        <input class="input" id="f-time" type="number" inputmode="numeric" min="0" step="1" placeholder="30">
+      </div>
+      <fieldset class="field">
+        <legend>Unité</legend>
+        <div class="options">
+          <label class="opt"><input type="radio" name="unit" value="min" checked><span>min</span></label>
+          <label class="opt"><input type="radio" name="unit" value="h"><span>h</span></label>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="field">
+      <label for="f-servings">Nombre de portions <span class="hint">(sert au calcul de la liste de courses)</span></label>
+      <div class="stepper">
+        <button type="button" id="servings-minus" aria-label="Une portion de moins">−</button>
+        <input class="input" id="f-servings" type="number" inputmode="numeric" min="1" max="30" step="1" value="2">
+        <button type="button" id="servings-plus" aria-label="Une portion de plus">+</button>
+      </div>
+    </div>
+
+    <fieldset class="field">
+      <legend>Saisons <span class="hint">(aucune = toute l’année)</span></legend>
+      <div class="options" id="f-seasons"></div>
+    </fieldset>
+
+    <div class="field">
+      <label for="f-ingredients">Ingrédients <span class="hint">(un par ligne)</span></label>
+      <textarea class="input" id="f-ingredients" rows="5" placeholder="200 g de farine&#10;2 œufs&#10;25 cl de lait"></textarea>
+    </div>
+    <div class="field">
+      <label for="f-steps">Étapes <span class="hint">(une par ligne)</span></label>
+      <textarea class="input" id="f-steps" rows="5" placeholder="Mélanger la farine et les œufs&#10;Ajouter le lait petit à petit"></textarea>
+    </div>
+    <div class="field">
+      <label for="f-source">Lien de la recette <span class="hint">(optionnel)</span></label>
+      <input class="input" id="f-source" type="url" inputmode="url" autocomplete="off" autocapitalize="off" placeholder="https://…">
+    </div>
+  </form>
+  <div class="sheet-bar bar-2">
+    <button class="btn btn-soft" type="button" data-close>Annuler</button>
+    <button class="btn btn-primary" type="submit" form="recipe-form">Enregistrer</button>
+  </div>
+</section>
+
+<!-- ============ FILTRES (plein écran) ============ -->
+<section class="sheet" id="filter-sheet" role="dialog" aria-modal="true" aria-labelledby="filter-title" hidden>
+  <div class="sheet-head">
+    <button class="icon-btn" type="button" data-close aria-label="Fermer les filtres">✕</button>
+    <h2 id="filter-title" tabindex="-1">Filtres</h2>
+    <span class="head-spacer"></span>
+  </div>
+  <div class="sheet-scroll form">
+    <fieldset class="field"><legend>Saison</legend><div class="options" id="flt-seasons"></div></fieldset>
+    <fieldset class="field"><legend>Catégorie</legend><div class="options" id="flt-categories"></div></fieldset>
+    <fieldset class="field"><legend>Temps maximum</legend><div class="options" id="flt-times"></div></fieldset>
+    <p class="filter-count" id="filter-count" aria-live="polite"></p>
+  </div>
+  <div class="sheet-bar bar-2">
+    <button class="btn btn-soft" type="button" id="filter-reset">Réinitialiser</button>
+    <button class="btn btn-primary" type="button" data-close id="filter-apply">Voir les recettes</button>
+  </div>
+</section>
+
+<!-- ============ ACTION SHEET ============ -->
+<div class="action-layer" id="action-sheet" hidden>
+  <div class="action-backdrop" data-dismiss></div>
+  <div class="action-panel" role="dialog" aria-modal="true" aria-labelledby="action-title">
+    <div class="action-group">
+      <div class="action-head"><p class="action-title" id="action-title" tabindex="-1"></p><p class="action-msg" id="action-msg"></p></div>
+      <div id="action-buttons"></div>
+    </div>
+    <button class="action-btn action-cancel" type="button" data-dismiss>Annuler</button>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   CONFIGURATION
+   ===================================================================== */
+const STORAGE_KEY = 'mesRecettes.v1';
+const ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAMAAAAKE/YAAAAAkFBMVEXx9Orj59vn5KzZ28bT2MfO08TN0Lze0I/ixXLoqTrDx7SzsKTXkjTKgSOOiYZ4dm9scGBmcFZmcFVmcFRpa19faFFeWllVWEtUUE9NTUZMSEhHRkJDQUA/Pjw8Ozo6ODg4NzY3NjU1NDQzMjIwLy8sKysnJiYkIyIgHx4cGxoZGBcWFRUVFBMTEhIREBAKCgrnyr4IAAAPPklEQVR42u2ca3vaOrOGoWBD7dTmYGTZkmxjMIeA4f//uz0zkozJSt5QUkh7betDVtLVD3efPDMajTT0Zv/g6nXQHXQH3UF30B10B91Bd9AddAfdQXfQHXQH3UF30B10B91Bd9D/b6Hns9kijqMwSqvjGdapvegP9pVKhUoW9Hf/EqUXCQtDVp0IuK6PtA6w8L91TeSva5FKEf8VSs+ngBwFoUCNCfjwimtPC78j9hq4T1uVSvWH1e7d54yEBYEi4iMRI+zusgjdcu+yVInFn6S+AxpkjoNAGJEPr5p3u9u2lgU32DJV8R8Uu3ePzKEfgTHquiaNd4i7uV4anPQm7A1Y+8+J3bsjAINgpVVuE1ftZcBJ71eMynOdodjzb4KOmR+e2sgN8NquCznJDSYhsblKvkXp+SwOfY45Dr0MyIaYWFfrlV4NeYN9QLFfwSLfonQc+CXIfDoaZEtMsKVZbXDCJo/Arwficf586CTwt+f6VKPMYIwWcbk0q6CvGt1io9hkkRyp58+FBuY9MB8PJLNGboCLIs/syosC4EuNbagPSL3kCnamZ0LHhtnKTMilFpeADbVSUioAX5bLC7alTtTXpe79VgzuzkfNvDHGKJcoaSGFECmLQloR4xByArm12lfUWSqepvR8tpj41YVZe7lE5CxlnEeB73uu4wwdx/P8IGRpCugk94qc3VBLkTxP6dgXV8yEXCwVjyIWBr4Hy3WGuBzHcb0g4qyN3VCfEhk/Czr2I+vnDQCDM0pCnoQsCjyXFjAPYA0d+H7oBYxFPFUQlBfqI1Sse54tngMNJRKWdMhcaeZlXuQJWJhNPC0vQg/6/f7A/uBHcEbgAsW+oq64fAb0dBFhENZWZ0wa+VJFQRDy0B0MSVxPQw+A2qE18EKITYZiL0tLjacDmX6tDOndag5+PtQH0rlEnYt8mYZBMEFmdISLliah+/ATLviqqSOu8hy1phyCtq65WkwfDD2fojmwREKdS6MzDyBJ8IiYB46OwzY02dsLwyAMubTUjUHEo+0xBaHXZA7IG7g/YwgyHxMb8waN0Ch1W+kBGIWoA6IukNpIfU7lV6rr3m1RGAIzmQM3uRXozHwvCCc8GJh0QdAemHrQhoZlqK1DtjuqQrZfisWblGb+5nxEc1SrolwjMwdmEDpESkwdBpoSdeMOQO4BdWCoIYdAMJpYFF+Jxd4NeyEKTVG4WS+XEIR5kfoOmGPCfNIZM5yBxj1RY2vmXq8/cIk6wcx3MciOidn0cdDo6MoIXeYYhIUKgPkitNNAa+pBYw6CHg58sEgk8jyHxGelTsTicfaAoiMMdIrerMCXYI4idD2C9i0zZukW9MD4WUNjwgaxmcJgbKTeMPFIT8e+bAtdgKFdZI5CF6E1M0E7ZA7MH5oZoXv9oQvbDya+PM+WVurzmYu7K+sboCP/QHX/Zk1CFxmZA4QOyL2GGaq70ZjWaIDxdwXtDvp+GEHey7XUmKtzfnco9m7IdxMUeo9ClxCFS4a1Z9sdVCp545eXl1+4Xn7+HL2FJmqeQzCS1DYUH6T0fJb4+fkA7gChCxRaBUNijqBQssxDd6yBNfXLy89Rr2ehBwgNpgmY0FJbfySLh9mDBa/aHSsrtKuhwdI6RbvDkYUFXFj4ZUzA+IWg3UFvEHI4ixVrCkXwR3a3Pz6FXoR6N9xWyxxTh3U0WNo1GdoZa+Rxs5D8Zx/FRnIXswoY3WcSDLKy/tiy5FFKJwG37gDoYpn6roV2hlSRWmarc0Pdo9XvUwUIUvdDAUffJYQi+aNmyaMCMQ5WZ+2ObInuiOAkhcwQh5DgkNm/Zv7ZiD020EMD3fNTPLKvqQABf9xt6s/tEezJ0tUyK9vumCA0Gtp7w9yi/qEDcUjbDvjDgQ0my7Q/AFrx+EHZYxLAKQstXQB0UQjrjijyiZnM8XIFfaHW+Xqg/QHZOwRTq8KaurrX1J9BxyEWS7AdoqWbJK2PhrgNOu5Lw9xA/7TQo14LGvwRgD8U+oNMvYseBJ2EzMRhRtCR3lgoeRD06L9CX6JxrPcYV/sDTA1JT2UW+nDv9vI5dKqhV1kBls5DAx2BpTGVDcfvCG2o4eugSR9kao9luVKrCiIROyBgj+lDoIPskjyw7tDuAGaq/F3n5UPo0diGYhOJbqRyJZeVSR+MP2ZzSWzGKwG6KKSGhiiEHfxDS2voHz/Q1FfQQyialCwsNOeLB0FXJwsN51kRYJaGHRybG0Ay9C6WfmPqEUKPTfVhoAchQmeQPjR0/CjojU7TJWS8HKDJHQ6UzNrS3qXqeCP1qPdjfIH2PTi365xH0JTzEvYE6EJDTzzsfRF03/v1EXUL+pI+AoRWdndJHwUdbk4HA11q6DDoX6DdX23qK3809ui1oCEQxROg257OJUBPfII2jbCXj6jHILQOxF7faaAhT1+gH+VpEa6voENQ2m2gvWH/Y+im+mjSB0AvG+j6gdCTnOyBeRqgs9And5jkAf4Y//rQIJfq9LKPrwC6yR4sfkyeFpE8Hw7NjphFQejpfp2j/eFeHbPeJuv/QK8zlWYmTz9sR4xZcrK1RwnbODNCW2hneH04vIYeaOimzOuFlZJpTtt4fX59VMG0YOykmx45QhcJCa2hda/D//Xr+kz7X6EH9sCF0CKFbfyxVd48ZkfdQIBDQJnnMtLQQwvtOS8fUvfpkNjvm6MtfM8qKcSKqrz6XEUPOgTMErarze5Ckci8/uAK2vPeUDfMP3QXATONge6na5nKtUkeij0OujqZ2hT9kUm/PzS90ob6fWjdsUGhHWIGgw+LpUy/nPFuONgyRdB4dEHoPMTLFN2Utl1H7+Ud6FEfO3oo9MUdfpUJHYfHGpLHvfeJnx9sk6S2pqYr8JSk1tBNr7TtEE3tWmbjjiHF4UamYqUzHsTho6DnM8H3R7O9FGhqFTm612+a0i5dxvkvV8yjITJTsTQgaGLuS3ynpy1dn3P2OOiEg6kPOumB1LkU4bDf3CYbbmyajl9edPIYj+j6os3s0I/+Rhl3UOXBHtfLWwiBpgZ/rHLtDx5CzdGHfRzv8I3Y2E2HjX00GukLcmONK2bKHZjwaGvZ390Vu6U/jf4w/WkKRcUZw1sUlkrFfNdCG/DLJZHueQzNnTlAB1slErWmrml9XrHH9afnszhdn2yDmqQWLGKcp7BEmQeNs+2lfnMP0B9YnfF6oOesShC6tLmD8wfebqE/jge6c1kXxRJDMWURLAbkiSwj33Dp+6HhcNAQD/TNvkPMPbaRJPQWHzTdv4ffeCWXpNv6oK8RQWqkTkBrhtBpkuZyEgS+T+0Q+EbfbOk41cs43N8qKzTuLII/8HYLnyBIBdD6wpayXiY5M9BpmogM/hlZluMLJiVDz2k53DJDpZetpEgzcjS4Y39vWXojNKTqdEcbDN1+ktREzbWxQW1cXC8oTtxLPrH3Xb1etJFQduDGQkla8i88r7npbnyhVH2sKVev9MswojbMQJ3wZjGoA117paih0RwBmgNytEkd+7sb6jc/nZglclMftUFWWmpAgDBMm9WiFjoP4gmhYfY3OTCrtb3QFzx+8CuEOUgtD0d6DLSp8J6ZqAXmPPEOdcoD33Wb+1so9IIKNlJjDkwd2684+kZ7QK5WkKvxteZWU+sng0JI2WBfLMJ4ykLf0++wIPf5fJMh85LMAamjvv827nZooJZyd8KH9DuiLnLUWuFTR0kPCa+01jGK795wBXy9xl+LKAwzlErx1x653fiGabrI1LGmI4zWGoNRKUx2F7Hb1ASOX+SyzOCvJIIuiBpzPAMaDgNZqV9601tC42uF2RnlFu9RI7OQ+PsA82eW+fQK5pg+BRqSdbY5HRvqlaG22MYjSZuaa2RibnQ+nQR/2gvI2Uyp7Vtqi625r9VOU6mR4c9lYZ9t1qc8fd5bU7L1/lTrB9+biozdwm7rjalQamRiVqVhBqErHkSL2Wz6JKVniyLb68S302KXVmzgtk+nKaUouxBZZKsWc+r33Hg+f5Y9YI9ZZns7d/FG7HeXRDcr89zKMAdwCPOYiOdPUnqOWu+ImixCYn+ErRO4UAUhN8xR4AN1ACXAk6CROsu3ZvhJjwXQM2pdlb5BxqVVRpmR+YhPPcPQ7/uCsadBE3Wxobm41wabHtkTtwWXCA3haR7FkszH0ysU287QD4MwYSwV8+n8OdDILcrVAVPfQU8UbQw3Tgfked6MX5iH3nqCC62xEyJeBJ7jMx5O4PCTPEtpzHyzZFnuTicz0acHoZrpkZWdzbFzOYSM1qgEvqqPAy/gYSA2gqWL50Fj6oMc9qqd/dHIWTNvRvOUdb3LlKCxnDhSkyDdgj+YuLuivgMah/vKcnPAAcpDM464vcz3mYFEmkgk5P06s/OIIk9DvsFn95hApvOnKY1jlHK13iL24Z25z9bsJw7c7qtl3jwsjSXnBT4E19T3iX3fYDD+ntVqvXklb6PedsB2fzVni2f4ar0UrRnbOE5khA2qCKqq5L6n3/dOMyM2qF3t4Ldf6ylmPRz8annp3wJnylK8mVSdx4oj9QQKwSSePRGaMBYCNo8Kj6o0go1mOBzMFDYezSCnFO8drBZChPRKjkV3Hby+MKFPj3JjCfs0tbpwdvmo2fU0TLXK9Mj4Ow5IkBpnCrTY86dBN7/tBHfrZrTWDFbm8n/86rHVZrS+R+yvQmuN5os4EVCeFrDwyj6JF/Q/PixBpzPBG+rfdvYf+ACHD8im/6tonk8XklHmw/Nv9JvUf+5TJ+YGcj6/pcSfQzSwILTUPPmdMdZv+6gMtHVkoPlvpuzv+3wPMAif6DlROA4T9d8PjQbBAUw4t8NxGMS+3djf+kkqCTWMUzzjoNjJrZ3Ub4VeCIWTuFIf2/nNDvnez6xZqALPZXTvITX1/K+HnsXZKs8LOmEqmSYsuWlg57s/HSjJ1mVZ6habFMlth/Tvhl4kZbUyx3mg5jc1J7/9c5jgDGS7EEjNbmkDf/+HRy3UukWd8htuY74degoHt6pFzW9oLXy/0rAzZrq9ZqiTT9PeX/HZYouscUiu0s+3878Begq+XpHYeLGqPm+o/iWf4rYQRE0NwfTTDyP7O6DntDcCNu4zmRD/htLYRE5KdHa5XEr5j0AbjxB2Gf8z0POZblqty38lEC9ln7rhI8i6D67soDvoDrqD7qA76A66g+6gO+gOuoPuoDvoDrqD7qA76A66g+6gO+gb1/8BNRuXd5ufWdkAAAAASUVORK5CYII=';
+
+const CATEGORIES = {
+  'Entrée':  { label: 'Entrée',  emoji: '🥗', hue: 95 },
+  'Plat':    { label: 'Plat',    emoji: '🍲', hue: 28 },
+  'Dessert': { label: 'Dessert', emoji: '🍰', hue: 340 },
+  'Snack':   { label: 'Snack',   emoji: '🥨', hue: 45 },
+  'Quick':   { label: 'Rapide',  emoji: '⚡', hue: 150 }
+};
+const SEASONS = {
+  p: { label: 'Printemps', emoji: '🌸' },
+  e: { label: 'Été',       emoji: '☀️' },
+  a: { label: 'Automne',   emoji: '🍂' },
+  h: { label: 'Hiver',     emoji: '❄️' }
+};
+const SEASON_KEYS = Object.keys(SEASONS);
+const TIME_FILTERS = [[0, 'Peu importe'], [15, '≤ 15 min'], [30, '≤ 30 min'], [45, '≤ 45 min']];
+const RATIOS = ['4 / 5', '3 / 4']; // images verticales uniquement
+
+/* Recettes Jow (importées par lots, une seule fois chacune).
+   [titre, catégorie, minutes, portions, clé image, slug, ingrédients "a|b", étapes "a|b", saisons]
+   Saisons : p printemps, e été, a automne, h hiver ; "" = toute l'année.
+   Étapes résumées : la recette complète est accessible via le lien source. */
+const JOW_IMPORT_KEY = 'mesRecettes.jowImport.count';
+const JOW_IMPORT_LEGACY_KEY = 'mesRecettes.jowImport.v1';
+const JOW_RECIPES = [["Quiche thon, tomate & moutarde","Plat",60,6,"USGKMX2Vwb7Yug","quiche-thon-tomate-et-moutarde-8bs5buxzf07k4zms02ud","Moutarde · 2 c. à s.|Thon (conserve) · 150 g|Œuf · 3|Lait · 100 ml|Crème liquide · 100 ml|Tomate · 300 g|Pâte brisée · 1","Four à 180 °C. Foncer le moule avec la pâte, la piquer et la précuire 5 min.|Battre œufs, lait et crème avec sel et poivre.|Trancher les tomates.|Tartiner le fond de moutarde, garnir de tomates et de thon, verser l'appareil.|Cuire 45 min, laisser reposer 10 min. Servir avec une salade verte.","e"],
+["Tomates farcies","Plat",57,2,"NkP8LppTL8vnIw","tomates-farcies-81svjp7u34c000vm1cwh","Tomate (à cuire) · 4|Riz · 140 g|Chair à saucisse · 200 g|Persil (frais) · ¼ botte|Échalote · ½|Ail · ½ gousse|Pain de mie · 1 tranche|Lait · 4 c. à s.","Four à 180 °C. Faire tremper le pain de mie dans le lait.|Décalotter les tomates et les évider en gardant la chair.|Hacher échalote, ail et persil ; malaxer avec la chair à saucisse et le pain, saler, poivrer.|Dans le plat, mélanger le riz, 180 ml d'eau par personne et la chair des tomates.|Farcir les tomates, les poser sur le riz avec leur chapeau et cuire 45 min.","ea"],
+["Salade de tortellini, tomates cerises & mozza","Quick",7,2,"QNifRg8UDbAW5g","salade-de-tortellini-tomates-cerises-et-mozza-8tnj690jkts16cux0rh1","Tortellini (Ricotta-épinards) · 250 g|Tomates cerises · 200 g|Salade (Mélange) · 4 poignées|Mozzarella (boule) · 1|Pignons de pin · 2 c. à s.|Huile d'olive","Cuire les tortellini dans l'eau salée selon le paquet.|Couper les tomates cerises en deux.|Assembler salade, tortellini, tomates, pignons et mozzarella déchirée ; huile d'olive, sel, poivre.","e"],
+["Bo bun nems poulet & sauce cacahuète","Plat",19,2,"qa0rdA16ilujXA","bo-bun-nems-poulet-et-sauce-cacahuete-8ztkc9qiffdc02y70vww","Vermicelles de riz · 120 g|Nem (poulet) · 4|Salade (sucrine) · 1|Concombre · ½|Beurre de cacahuète · 2 c. à c.|Sauce soja sucrée · 2 c. à c.|Ail · 1 gousse|Gingembre (frais) · 2 cm","Four à 210 °C : cuire les nems 12 min sur papier cuisson.|Sauce : mélanger beurre de cacahuète, sauce soja sucrée, ail et gingembre râpés, un peu d'eau si besoin.|Couper le concombre en bâtonnets et la salade en morceaux.|Cuire les vermicelles, puis les rafraîchir à l'eau froide.|Dresser vermicelles, crudités, nems coupés en deux et sauce ; menthe si vous en avez.","pe"],
+["Poisson pané, purée & haricots verts","Plat",20,2,"0ZeIm0s45Vwd2g","poisson-pane-puree-et-haricots-verts-8feaik6af94wk4s616wl","Haricot vert (frais) · 200 g|Poisson pané · 200 g|Pommes de terre · 300 g|Lait · 60 ml|Beurre · 20 g","Éplucher les pommes de terre, les couper en dés et les cuire 15 min à l'eau.|Cuire les haricots verts 12 min dans une autre casserole.|Poêler le poisson pané environ 5 min par face.|Égoutter, écraser les pommes de terre avec lait et beurre, assaisonner.|Servir le poisson avec la purée et les haricots.","e"],
+["Boulettes à la tomate au air-fryer & semoule","Plat",37,4,"97HcAesLRrZ1fg","boulettes-a-la-tomate-au-air-fryer-et-semoule-979u1d69a1hsanmz0n1k","Bœuf (haché) · 360 g|Œuf · 1|Échalote · 1|Sauce tomate (basilic) · 300 g|Parmesan (râpé) · 4 c. à s.|Chapelure · 4 c. à s.|Semoule · 240 g|Huile d'olive","Émincer l'échalote ; la mélanger avec bœuf, œuf, chapelure et la moitié du parmesan, saler, poivrer.|Former des boulettes et les cuire 8 à 10 min au air-fryer à 200 °C en les retournant.|Ajouter la sauce tomate, un peu d'eau et le reste de parmesan ; cuire encore 5 à 6 min.|Semoule : même volume d'eau bouillante, 5 min à couvert, puis égrener.|Servir les boulettes sur la semoule.",""],
+["Aubergine panée, roquette & parmesan","Plat",17,2,"bWNvjZBATkgKOA","aubergine-panee-roquette-et-parmesan-8u6ecrnu24nncwjh0zz4","Aubergine · 1|Œuf · 2|Farine de blé · 4 c. à s.|Chapelure · 6 c. à s.|Tomates cerises · 200 g|Salade (roquette) · 2 poignées|Parmesan (copeaux) · 40 g|Crème balsamique · 2 c. à c.|Huile · 100 ml","Couper l'aubergine en tranches fines dans la longueur, saler, poivrer.|Paner : farine, œuf battu, puis chapelure (deux couches pour plus de croustillant).|Frire dans un fond d'huile environ 4 min par face, égoutter sur papier absorbant.|Couper les tomates cerises en deux.|Servir sur la roquette avec parmesan, huile d'olive et crème balsamique.","e"],
+["Bowl falafel maison, crudités & sauce yaourt","Plat",19,2,"o7yV097U2C6Jrg","bowl-falafel-maison-crudites-et-sauce-yaourt-8h4chddk88a8kxe41745","Pois chiches (cuits) · 240 g|Tomates cerises · 200 g|Concombre · 200 g|Menthe (feuilles) · ¼ botte|Persil (frais) · ¼ botte|Oignon jaune · ½|Farine de blé · 3 c. à s.|Ail · 1 gousse|Yaourt Grec · 2 c. à s.|Olives vertes (dénoyautées) · 40 g|Citron jaune · 2 quartiers|Huile · 100 ml","Couper olives, tomates cerises, concombre ; émincer l'oignon ; ciseler menthe et persil.|Mixer grossièrement pois chiches rincés, oignon, moitié des herbes, farine et ail ; saler, poivrer.|Former des boulettes et les dorer environ 5 min dans un fond d'huile.|Mélanger crudités, olives, jus de citron, huile et reste des herbes.|Servir falafels, salade et yaourt grec.","pe"],
+["Tatin d'oignons","Plat",57,4,"52w0ZpWKVM7dDw","tatin-d-oignons-87qajclx8pgw6wh21b22","Oignon jaune · 700 g|Pâte brisée · 1|Vinaigre balsamique · 4 c. à c.|Sucre (en poudre) · 15 g|Huile d'olive","Four à 180 °C. Éplucher les oignons et les couper en deux ou en quatre.|Les dorer au beurre 2 min par face, ajouter un peu d'eau et cuire 6 à 8 min à couvert.|Ajouter sucre et vinaigre balsamique, laisser mijoter 5 min à feu doux.|Ranger les oignons côté coupé dans le moule, napper du caramel, couvrir de pâte et la piquer.|Cuire 25 à 30 min, laisser refroidir puis retourner sur un plat.","ah"],
+["Tian de légumes","Plat",65,2,"iCdR7zYLvCDn0w","tian-de-legumes-8hp9dm362jgwkdve0ji0","Courgette · 1|Tomate · 2|Aubergine · 1|Oignon jaune · ½|Ail · 1 gousse|Herbes de Provence · 2 pincées|Huile d'olive","Four à 180 °C. Couper aubergine, courgette, tomates et oignon en fines rondelles.|Huiler un plat et y râper l'ail.|Disposer les rondelles debout en alternant les légumes.|Huile d'olive, herbes de Provence, sel, poivre ; cuire 50 min.","e"],
+["Salade de pâtes, pesto, mozza","Quick",13,2,"0qdU0At0aV20xQ","salade-de-pates-pesto-mozza-8il2j2fbg3eokpaf0p0c","Pâtes (Pipe rigate) · 200 g|Tomates séchées · 80 g|Sauce pesto · 2 c. à s.|Vinaigre balsamique · 2 c. à s.|Mozzarella (mini) · 120 g|Basilic (frais) · ¼ botte|Huile d'olive","Cuire les pâtes dans l'eau salée, égoutter et laisser tiédir.|Émincer les tomates séchées.|Vinaigrette : vinaigre balsamique + pesto, poivre.|Mélanger pâtes, tomates, billes de mozzarella et vinaigrette ; basilic pour finir.","pe"],
+["Risotto aux courgettes","Plat",31,2,"XNsY0OATcpe9uQ","risotto-aux-courgettes-85siljm070qt09up1c5j","Riz (Arborio) · 140 g|Courgette · 200 g|Bouillon de légumes (cube) · ½|Parmesan (râpé) · 2 c. à s.|Vin blanc · 40 ml|Échalote · ½|Beurre","Faire suer l'échalote ciselée au beurre 1 min, ajouter le riz et le nacrer 2 à 3 min.|Déglacer au vin blanc.|Dissoudre le cube dans 250 ml d'eau bouillante par personne ; l'ajouter louche par louche en remuant.|Pendant ce temps, poêler les courgettes en rondelles 5 min, puis 5 min à couvert avec un peu d'eau.|Finir le riz avec parmesan et une noix de beurre, incorporer les courgettes ; zeste de citron.","pe"],
+["Taboulé de quinoa","Quick",7,2,"XuTeG5O4clPOwQ","taboule-de-quinoa-8yc6cdkv1ztc03rx17em","Quinoa (cuit) · 140 g|Concombre · ½|Tomate · 200 g|Feta · 80 g|Oignon rouge · ¼|Menthe (feuilles) · ¼ botte|Citron jaune · ½","Préparer le quinoa selon le paquet.|Couper tomate et concombre en petits dés, émincer l'oignon rouge et la menthe.|Mélanger le tout avec jus de citron, huile d'olive, sel, poivre.|Émietter la feta par-dessus et mélanger.","pe"],
+["Aubergine à la milanaise","Plat",41,2,"4V0MwWLjkixEGw","aubergine-a-la-milanaise-8u6bhbey24nncwjh0wam","Aubergine · 1|Œuf · 2|Farine de blé · 4 c. à s.|Chapelure · 6 c. à s.|Pâtes (spaghetti) · 200 g|Sauce tomate (basilic) · 300 g|Parmesan (râpé) · 60 g|Huile d'olive","Four à 180 °C. Cuire les spaghetti.|Couper l'aubergine en tranches épaisses dans la longueur, assaisonner.|Paner : farine, œuf battu, puis chapelure mélangée à un peu de parmesan.|Cuire les tranches 25 min au four sur papier cuisson avec un filet d'huile.|Mélanger les pâtes à la sauce tomate chaude, servir avec l'aubergine et du parmesan.","e"],
+["Steak de chou-fleur & haricots verts","Plat",28,2,"FOvblDQyt0Lgfg","steak-de-chou-fleur-et-haricots-verts-8ftfhad5b6cwki2p0iv0","Chou-fleur (frais) · 1|Haricot vert (frais) · 200 g|Sirop d'érable · 2 c. à s.|Ail · ½ gousse|Citron jaune · 2 quartiers|Paprika · 2 c. à c.|Huile d'olive","Four à 220 °C. Tailler une tranche épaisse (3 cm) de chou-fleur par personne, le reste en fleurettes.|Cuire le tout 8 min à l'eau salée ; sortir les steaks, prolonger les fleurettes 10 min.|Marinade : paprika, sirop d'érable, jus de citron, ail râpé, huile d'olive.|Badigeonner les steaks et les rôtir 15 min.|Cuire les haricots 12 min ; écraser les fleurettes en purée avec huile et sel.|Servir steaks, purée et haricots.","pah"],
+["Chakchouka aux petits pois & poivrons","Plat",25,2,"bix9ubOidqtZNQ","chakchouka-aux-petits-pois-et-poivrons-8o5d2ul2mflddwk119af","Petits pois (conserve) · 200 g|Œuf · 4|Oignon rouge · ½|Tomate (purée) · 300 g|Poivron (assortiment) · 2|Persil (frais) · ¼ botte|Huile d'olive","Épépiner les poivrons et les émincer ; émincer l'oignon.|Dorer l'oignon 2 min à l'huile, ajouter les poivrons 5 min.|Ajouter purée de tomate et petits pois, assaisonner, mijoter 10 min à couvert.|Creuser des puits, y casser les œufs, cuire 3 min à couvert.|Parsemer de persil (et de feta si envie).","pe"],
+["Bowl aux crevettes teriyaki, riz & crudités","Plat",16,2,"p3vAVDc3lOMK8g","bowl-aux-crevettes-teriyaki-riz-et-crudites-8im3lw1cg5r4kaht02qz","Riz · 140 g|Concombre · 200 g|Tomates cerises · 200 g|Crevette (cuite) · 160 g|Sauce Teriyaki · 4 c. à s.|Graines de sésame · 2 c. à s.|Huile d'olive","Décongeler les crevettes si besoin. Cuire le riz.|Couper le concombre en dés et les tomates cerises en deux ; assaisonner à l'huile d'olive.|Saisir les crevettes 1 min à la poêle, ajouter la sauce teriyaki et réduire 2 à 3 min.|Parsemer de sésame et servir avec le riz et les crudités.","e"],
+["Lieu & légumes rôtis","Plat",51,2,"7CzZGRUHU8bGaw","lieu-et-legumes-rotis-8he82zrzaej4kbc101wn","Lieu · 200 g|Pommes de terre (primeur) · 400 g|Tomate · 200 g|Chorizo (tranches) · 6 tranches|Vin blanc · 60 ml|Thym (feuilles) · 2 pincées|Huile d'olive","Four à 200 °C. Couper les pommes de terre en 2 ou 4 et les tomates en quartiers.|Dans un plat : pommes de terre, tomates, thym, vin blanc, huile, sel, poivre.|Ajouter le chorizo et enfourner 30 min.|Poser le lieu sur les légumes, assaisonner et cuire encore 15 min.","pe"],
+["Salade de riz au surimi","Quick",13,2,"tZ7qgjEDCFDjdQ","salade-de-riz-au-surimi-8t7pc8jrbdmohqfn09l4","Riz · 100 g|Surimi · 160 g|Tomates cerises · 300 g|Maïs (conserve) · 100 g|Mayonnaise · 2 c. à s.|Persil (frais) · ¼ botte","Cuire le riz, l'égoutter et le laisser refroidir.|Couper le surimi en morceaux et les tomates cerises en deux.|Mélanger riz, maïs égoutté, tomates, surimi et mayonnaise ; saler, poivrer, persil.","e"],
+["Pad Thaï crevette","Quick",12,2,"OqYMAdMnVIxUag","pad-thai-crevette-854c2rcb7ypx5gy60c12","Nouilles de riz · 160 g|Crevette (cuite) · 100 g|Pousses de haricots mungo · 100 g|Ail · 1 gousse|Sauce soja salée · 4 c. à s.|Beurre de cacahuète · 1 c. à s.|Citron vert · ½|Coriandre (frais) · ¼ botte|Huile d'olive","Décongeler les crevettes si besoin.|Sauce : fouetter jus de citron vert, beurre de cacahuète et sauce soja.|Cuire les nouilles selon le paquet.|Faire revenir l'ail à l'huile, puis les crevettes 2 à 3 min.|Ajouter nouilles et sauce, mélanger à feu doux, puis les pousses de soja 1 à 2 min.|Servir avec coriandre et cacahuètes concassées.",""],
+["Brochette saumon & courgette","Plat",26,2,"U4LUk0HCJOQiCw","brochette-saumon-et-courgette-8hrtabzoizk0kjrn06wg","Saumon (frais) · 2|Courgette · 1|Yaourt Grec · 2 c. à s.|Ail · ½ gousse|Couscous aux épices · 120 g|Cumin (moulu) · 2 pincées|Pics à brochette · 4|Huile d'olive","Four à 200 °C. Préparer la semoule (même volume d'eau bouillante, 5 min).|Couper le saumon en cubes et la courgette en demi-lunes.|Monter les brochettes en alternant saumon et courgette.|Huile, sel, poivre, cumin ; cuire 20 min au four.|Sauce : yaourt grec, ail râpé, filet d'huile, sel, poivre. Servir avec la semoule.","e"],
+["Saumon, courgettes & tomates au four","Plat",35,2,"UJ7THDQISmzdyQ","saumon-courgettes-et-tomates-au-four-8hvb4zy28j80khvb0nk5","Courgette · 2|Tomate · 2|Saumon (frais) · 2|Herbes de Provence · 2 pincées|Huile d'olive","Four à 240 °C. Couper courgettes et tomates en fines rondelles.|Les mettre dans un plat avec herbes de Provence, huile, sel, poivre ; cuire 10 min.|Poser le saumon sur les légumes, assaisonner.|Baisser à 200 °C et cuire encore 20 min.","e"],
+["Cabillaud & courgettes au curry","Quick",15,2,"V9n2k9xEE8Fo7Q","cabillaud-et-courgettes-au-curry-8ngpa2lne06adaaw198n","Cabillaud (frais) · 2|Courgette · 400 g|Curry (poudre) · 1 c. à c.|Ail · 1 gousse|Huile d'olive","Couper les courgettes en morceaux.|Les poêler 12 min à l'huile avec ail râpé et curry (un peu d'eau si ça attache).|Cuire le cabillaud à la poêle environ 2 min par face, saler, poivrer.|Servir ensemble avec un trait de citron.","pe"],
+["Rigatoni au thon & courgettes","Quick",15,2,"dp0sQ2z1JVmGoQ","rigatoni-au-thon-et-courgettes-8zd5m1p90vg0035j1als","Pâtes (Rigatoni) · 200 g|Courgette · 300 g|Thon à l'huile · 160 g|Basilic (frais) · ¼ botte|Citron jaune · ¼|Huile d'olive","Cuire les rigatoni en gardant une petite louche d'eau de cuisson.|Poêler les courgettes en demi-lunes 7 à 8 min, sel, poivre.|Ajouter pâtes, eau de cuisson et thon égoutté ; chauffer 2 à 3 min.|Finir avec basilic, zeste et jus de citron.","pe"],
+["Curry de poisson","Quick",15,2,"Hzcdn7GQ5s","curry-de-poisson-8217ezoh4hio00vj0ya7","Cabillaud (frais) · 2|Lait de coco · 160 ml|Tomates cerises · 160 g|Sauce Curry Korma · 4 c. à c.|Riz · 140 g|Coriandre (frais) · ¼ botte|Huile d'olive","Cuire le riz.|Faire revenir les tomates cerises 2 à 3 min à feu vif.|Ajouter le cabillaud en gros morceaux, la sauce curry et le lait de coco ; assaisonner.|Porter à frémissement et mijoter 6 min à couvert.|Servir avec le riz et de la coriandre.",""],
+["Ceviche cabillaud & coco","Entrée",5,2,"ozdv0e1Aqvdb0g","ceviche-cabillaud-et-coco-8c0biev84zdc4j5f0y6e","Cabillaud (surgelé) · 2|Citron vert · 1|Lait de coco · 2 c. à s.|Oignon rouge · ½|Tomates cerises · 200 g|Coriandre (frais) · ¼ botte|Piment d'Espelette · 1 pincée","Décongeler le cabillaud, retirer la peau et le couper en cubes.|Mélanger avec jus de citron vert, lait de coco, sel, poivre et piment.|Émincer l'oignon rouge, couper les tomates en deux.|Servir le ceviche avec tomates, oignon et coriandre.","pe"],
+["Wrap thon, tomate & avocat","Quick",5,2,"nM2bvpfv7qt8IA","wrap-thon-tomate-et-avocat-8spid2v87p1uf55q0s4l","Tortilla (blé) · 2|Thon (conserve) · 120 g|Mayonnaise · 2 c. à s.|Avocat · 1|Tomate · 200 g|Salade (Mélange) · 2 poignées","Écraser le thon égoutté avec la mayonnaise, saler, poivrer.|Trancher finement l'avocat et les tomates.|Tartiner les tortillas, garnir de salade, tomate et avocat.|Rouler et couper en deux.","pe"],
+["Risotto crevettes parmesan & poireaux","Plat",26,2,"nIQ406ZnY5INOg","risotto-crevettes-parmesan-et-poireaux-8wpjfeew3xao03gv124u","Riz (Arborio) · 140 g|Poireau · 2|Crevette (cuite/surgelée) · 240 g|Parmesan (râpé) · 2 c. à s.|Vin blanc · 40 ml|Bouillon de légumes (cube) · ½|Huile d'olive","Émincer le blanc des poireaux et bien le rincer.|Faire revenir les poireaux 2 à 3 min à l'huile, ajouter le riz 1 min, déglacer au vin blanc.|Mouiller avec le bouillon (25 cl d'eau par personne) louche par louche jusqu'à cuisson du riz.|Incorporer le parmesan puis les crevettes, chauffer 1 à 2 min.|Servir parsemé de parmesan.","ah"],
+["Salade de riz, thon & tomate","Quick",13,2,"0US2c4robZxOww","salade-de-riz-thon-et-tomate-8svc98xhbv5gj31q0oe7","Riz · 100 g|Œuf · 2|Thon (conserve) · 160 g|Tomate · 300 g|Maïs (conserve) · 100 g|Olives vertes (dénoyautées) · 60 g|Huile d'olive","Cuire le riz et le laisser refroidir.|Cuire les œufs 10 min, les refroidir, les écaler et les couper.|Couper les tomates, égoutter le maïs.|Mélanger riz, tomates, maïs, thon émietté, œufs et olives avec une vinaigrette.","e"],
+["Pâtes au thon, pesto & tomate cerise","Quick",12,2,"MlKjTWWyU9z08w","pates-au-thon-pesto-et-tomate-cerise-8spekclg7p1uf55p13i0","Pâtes (spaghetti) · 200 g|Thon au naturel · 160 g|Tomates cerises · 200 g|Sauce pesto · 2 c. à s.|Basilic (frais) · ¼ botte","Cuire les spaghetti en gardant une petite louche d'eau de cuisson.|Couper les tomates cerises en deux et les faire revenir 2 à 3 min à l'huile.|Ajouter pâtes, eau de cuisson, pesto et thon ; mélanger.|Assaisonner et parsemer de basilic.","e"],
+["Pâtes à la Sicilienne","Quick",12,2,"rJhZyBgf1i","pates-a-la-sicilienne-82hjc9548nrk00ua05yv","Pâtes (conchiglioni) · 200 g|Câpres · 2 c. à s.|Tomates cerises · 200 g|Thon (conserve) · 180 g|Origan (séché) · 2 c. à c.|Échalote · 1|Huile d'olive","Cuire les pâtes en gardant un peu d'eau de cuisson.|Couper les tomates cerises, émincer l'échalote, égoutter thon et câpres.|Faire revenir échalote et câpres 1 min, ajouter tomates, origan et thon 2 min.|Ajouter pâtes et eau de cuisson, mélanger 2 min et servir.","e"],
+["Salade de pommes de terre à l'italienne","Plat",25,2,"BQlzj28IKLYC4Q","salade-de-pommes-de-terre-a-l-italienne-8c649jxcihrq1usb0t43","Pommes de terre (primeur) · 300 g|Tomates cerises · 200 g|Câpres · 40 g|Anchois · 40 g|Olives noires (dénoyautées) · 30 g|Huile d'olive","Cuire les pommes de terre 20 min à l'eau salée, égoutter.|Couper les tomates cerises et les mélanger aux pommes de terre.|Ajouter câpres, olives et anchois rincés ; huile, un trait de vinaigre, poivre.","e"],
+["Crevettes sautées au citron vert, courgettes & riz coco","Plat",33,2,"N8kfsP0Ryg0AhQ","crevettes-sautees-au-citron-vert-courgettes-et-riz-coco-94f8ev0680cceupn0br9","Riz · 140 g|Crevette (cuite) · 140 g|Courgette · 240 g|Lait de coco · 200 ml|Sauce soja salée · 2 c. à s.|Ail · 2 gousses|Citron vert · 2 quartiers|Coriandre (frais) · 2 brins|Bière sans alcool (pack) · 100 ml","Cuire le riz dans l'eau et le lait de coco salés, 10 à 12 min à couvert.|Couper les courgettes en demi-lunes.|Mariner les crevettes : bière, sauce soja, jus de citron vert, ail râpé.|Poêler les courgettes 8 à 9 min, ajouter crevettes et marinade 1 à 2 min.|Servir sur le riz coco avec de la coriandre.","pe"],
+["Chipolatas & légumes rôtis","Plat",53,2,"w20dRveuf9UjTQ","chipolatas-et-legumes-rotis-876x1fe96kbp1etn0764","Saucisse (chipolata) · 4|Pommes de terre (primeur) · 400 g|Oignon jaune · ½|Ail · 1 gousse|Vin blanc · 40 ml|Poivron rouge · 1|Thym (feuilles) · 2 pincées|Huile d'olive","Four à 200 °C. Couper le poivron en cubes, l'oignon en quartiers, l'ail en lamelles.|Couper les chipolatas en 3 et les piquer ; recouper les grosses pommes de terre.|Tout mettre dans un plat avec huile, sel, poivre et thym ; cuire 30 min.|Ajouter le vin blanc (saucisses au-dessus du jus) et cuire encore 15 min.","ea"],
+["Bowl poulet teriyaki, semoule & courgette","Plat",19,2,"My0sfSbK88OvBQ","bowl-poulet-teriyaki-semoule-et-courgette-8y84kzoe3kg002su0dza","Poulet (escalope) · 2|Skyr · 2 c. à s.|Courgette · 2|Semoule · 140 g|Sauce Teriyaki · 1 c. à s.|Ail · 1 gousse|Huile d'olive","Couper les courgettes en demi-lunes et le poulet en morceaux.|Dorer le poulet 5 min, ajouter la sauce teriyaki et cuire 2 min.|Poêler les courgettes 7 à 8 min dans une autre poêle.|Semoule : même volume d'eau bouillante, 5 min, égrener.|Sauce : skyr, ail râpé, huile, sel, poivre. Servir en bol.","pe"],
+["Galette complète","Quick",8,2,"rTDjmbkEJYOUww","galette-complete-81pfd91j1lkg00ws06qy","Jambon blanc · 2 tranches|Œuf · 2|Galette bretonne · 2|Fromage râpé · 60 g|Beurre","Faire fondre du beurre dans une crêpière et y poser la galette.|Casser l'œuf au centre, saler, poivrer.|Quand le blanc prend, ajouter jambon et fromage râpé.|Replier les bords et laisser griller 2 min.",""],
+["Moussaka","Plat",57,2,"cI1ZCEsHMgcA3g","moussaka-8zvt7ixki3zk031107qt","Aubergine · 300 g|Bœuf (haché) · 200 g|Oignon jaune · ½|Sauce tomate (basilic) · 200 g|Ail · 1 gousse|Farine de blé · 30 g|Beurre · 30 g|Lait · 250 ml|Mozzarella (râpée) · 60 g|Muscade · 2 pincées|Huile d'olive","Four à 180 °C. Trancher finement l'aubergine, huiler et rôtir 15 à 20 min.|Dorer le bœuf haché 5 min, ajouter oignon émincé et ail 5 min.|Ajouter la moitié de la muscade et la sauce tomate, mijoter 5 min.|Béchamel : beurre fondu + farine, puis lait petit à petit jusqu'à épaississement ; sel, poivre, muscade.|Monter en couches aubergine / viande (deux fois), napper de béchamel et de mozzarella.|Gratiner 20 min à 210 °C.","ea"],
+["Aubergines teriyaki, riz & nems au poulet","Plat",19,2,"DZm228KgvYY1kg","aubergines-teriyaki-riz-et-nems-au-poulet-8ztm0xfuffdc02y715v8","Nem (poulet) · 4|Aubergine · 300 g|Riz · 140 g|Sauce Teriyaki · 4 c. à s.|Graines de sésame · 2 c. à c.|Huile d'olive","Four à 210 °C. Cuire le riz ; enfourner les nems 12 min.|Couper les aubergines en gros cubes et les dorer 3 à 4 min à l'huile.|Ajouter un peu d'eau et la sauce teriyaki, mijoter 7 à 8 min à couvert.|Découvrir et réduire 2 min pour caraméliser ; ajouter le sésame.|Servir riz, aubergines et nems coupés en deux.","ea"],
+["Quiche bacon tomate mozza","Plat",60,6,"mJ0h1UGzNrLQQw","quiche-bacon-tomate-mozza-8b9zew4i55k5ce361bbd","Lard (tranches) · 8 tranches|Pâte brisée · 1|Tomates cerises · 200 g|Œuf · 3|Lait · 100 ml|Crème liquide · 100 ml|Thym (feuilles) · 2 pincées|Mozzarella (boule) · 1","Four à 180 °C. Foncer le moule, piquer la pâte et la précuire 5 min.|Dorer les lardons (ou tranches de lard) à la poêle.|Battre œufs, lait, crème, sel et poivre.|Garnir le fond de lard et de tomates cerises coupées, puis de mozzarella déchirée et de thym.|Verser l'appareil et cuire 45 min ; laisser reposer 10 min.","e"],
+["Galette saucisse","Quick",10,2,"360xkOlWgj1D0A","galette-saucisse-89bq1rsjffyq8jk919nv","Saucisse (fumée) · 160 g|Galette bretonne · 2|Fromage râpé · 40 g|Confits d'oignons · 2 c. à c.|Huile d'olive","Couper la saucisse en rondelles et la dorer 3 à 4 min au beurre.|Poser la galette dans une poêle beurrée, étaler le confit d'oignons au centre.|Ajouter fromage et saucisse, cuire 1 à 2 min.|Replier et cuire encore 1 min. Servir avec une salade.",""],
+["Steak Bowl méditerranéen","Quick",8,2,"H2IfSf5bkKoOcg","steak-bowl-mediterraneen-8nhbfoa3e06adaax0gis","Bœuf (steak) · 2|Houmous · 100 g|Tomates cerises · 200 g|Concombre · 200 g|Oignon rouge · ½|Salade (roquette) · 2 poignées|Huile d'olive","Émincer l'oignon rouge, couper les tomates cerises et le concombre.|Mélanger ces crudités et les assaisonner.|Saisir les steaks environ 2 min par face, saler, poivrer, trancher.|Dresser roquette, crudités, houmous et bœuf.","e"],
+["Bœuf & légumes sautés au pesto","Plat",19,2,"tSdikNsRSACx2Q","boeuf-et-legumes-sautes-au-pesto-8bw935va2chxjqy310do","Bœuf (steak) · 2|Sauce pesto · 2 c. à s.|Tomates cerises · 200 g|Courgette · 200 g|Poivron rouge · 1|Ail · ½ gousse|Huile d'olive","Couper la courgette en demi-rondelles et le poivron en cubes.|Faire sauter les légumes 10 min à feu vif avec l'ail, sel et poivre.|Ajouter les steaks et les saisir 2 min par face.|Hors du feu, ajouter le pesto ; trancher le bœuf et servir.","e"],
+["Bœuf, haricots verts & purée","Plat",25,2,"y6QLyk9WQL","boeuf-haricots-verts-et-puree-81ot4z2ubhtc00vb05a9","Haricot vert (frais) · 200 g|Pommes de terre · 500 g|Lait · 100 ml|Bœuf (steak) · 2|Beurre · 40 g|Huile d'olive","Éplucher les pommes de terre, les couper en dés et les cuire 15 min.|Cuire les haricots verts 10 min à l'eau salée.|Écraser les pommes de terre avec lait et beurre, assaisonner.|Saisir les steaks au beurre 2 min par face, saler, poivrer. Servir le tout.","e"],
+["Taboulé maison & boulettes de bœuf","Plat",23,2,"8EkN2Wz96EbJkg","taboule-maison-et-boulettes-de-boeuf-95c32gtpceoj311519sx","Boulettes de viande (fraîches) · 160 g|Semoule · 140 g|Concombre · 200 g|Tomate · 200 g|Oignon jaune · ½|Citron jaune · 2 quartiers|Persil (frais) · 4 brins|Menthe (feuilles) · 4 brins|Huile d'olive","Préparer la semoule (même volume d'eau bouillante, 5 min), l'égrener.|Couper concombre et tomates en petits dés, émincer l'oignon, hacher persil et menthe.|Mélanger avec la semoule, huile, jus de citron, sel, poivre ; réserver au frais.|Dorer les boulettes 2 à 3 min, puis cuire 10 à 12 min à couvert à feu moyen.","pe"],
+["Salade pâtes, tomates, mozzarella & chorizo","Quick",14,2,"KqiF3hdieb8zBw","salade-pates-tomates-mozzarella-et-chorizo-8o4v5l1d6uxg2zdj12ps","Pâtes (Fusilli) · 160 g|Tomates cerises · 200 g|Concombre · ½|Mozzarella (mini) · 120 g|Chorizo (tranches) · 8 tranches|Herbes de Provence · 2 pincées|Huile d'olive","Cuire les pâtes et les laisser refroidir.|Couper les tomates cerises en deux, le concombre en dés, le chorizo en morceaux.|Mélanger avec la mozzarella, une vinaigrette et les herbes de Provence.","e"],
+["Salade de pâtes & rôti de porc","Plat",20,2,"Yipaum4gcaSK0w","salade-de-pates-et-roti-de-porc-92dkbbf622s002v2169n","Pâtes (Penne) · 160 g|Avocat · 1|Tomates cerises · 200 g|Rôti de porc (tranches) · 2 tranches|Emmental · 50 g|Échalote · ½|Moutarde à l'ancienne · 1 c. à c.|Vinaigre de cidre · 2 c. à c.|Huile d'olive","Couper les tomates cerises, émincer l'échalote.|Cuire les pâtes et les égoutter.|Couper le rôti de porc, l'avocat et l'emmental en morceaux.|Vinaigrette : échalote, vinaigre de cidre, moutarde, huile d'olive, sel, poivre.|Mélanger le tout et assaisonner.","pe"],
+["Bœuf bourguignon","Plat",135,2,"W5SLqOWDew393w","boeuf-bourguignon-8eshe411e390mes50u2b","Bœuf (paleron) · 300 g|Carotte (frais) · 1|Oignon jaune · ½|Ail · ½ gousse|Vin rouge · 190 ml|Lardons · 30 g|Farine de blé · 1 c. à s.|Huile d'olive","Couper la viande en gros cubes, émincer l'oignon, couper la carotte en rondelles.|Saisir la viande 3 min à l'huile dans une cocotte.|Ajouter oignon, carotte et lardons 3 min, puis l'ail ; saler, poivrer.|Singer avec la farine, verser le vin rouge (et une feuille de laurier).|Couvrir et laisser mijoter 2 h à feu doux.","ah"],
+["Quiche champignon & poulet","Plat",63,6,"jCFE4C0MNrsmcA","quiche-champignon-et-poulet-8vf98d41eaz403f116sx","Pâte brisée · 1|Poulet (escalope) · 2|Oignon jaune · 1|Champignons bruns · 250 g|Comté (râpé) · 100 g|Lait · 100 ml|Crème liquide · 100 ml|Œuf · 3|Huile d'olive","Four à 180 °C. Foncer le moule, piquer la pâte et la précuire 5 min.|Faire revenir oignon et champignons émincés 5 min, réserver.|Dorer le poulet en dés 5 à 6 min.|Battre œufs, lait et crème, saler, poivrer.|Garnir le fond, verser l'appareil, parsemer de comté et cuire 40 min.","ah"],
+["Salade Vietnamienne au poulet","Plat",16,2,"0oWHrZ89g4BhmQ","salade-vietnamienne-au-poulet-8n9p32q716v8i9yu1bba","Nouilles de riz · 160 g|Carotte (frais) · 2|Concombre · ½|Poulet (escalope) · 2|Sauce soja salée · 2 c. à s.|Menthe (feuilles) · ¼ botte|Huile d'olive","Dorer le poulet 2 min à feu vif, le retourner et cuire 8 min à feu moyen.|Préparer les nouilles de riz selon le paquet.|Tailler carottes et concombre en rubans à l'économe ; hacher la menthe.|Mélanger nouilles, légumes, poulet en morceaux, menthe et sauce soja.","pe"],
+["Pâtes Alfredo au poulet","Plat",17,2,"edqIvzR7riiiLg","pates-alfredo-au-poulet-7zala73cbalc042e17ya","Pâtes (Tagliatelle sèches) · 200 g|Poulet émincé (cru) · 200 g|Crème liquide · 200 ml|Ail · 1 gousse|Parmesan (râpé) · 2 c. à s.|Huile d'olive","Cuire les tagliatelle.|Dorer le poulet 4 à 5 min par face, ajouter l'ail 1 min.|Verser la crème, ajouter le parmesan et laisser fondre 2 min.|Mélanger avec les pâtes et servir.",""],
+["Croque-monsieur gourmand","Plat",43,2,"kMhRdm1DrpsQxg","croque-monsieur-gourmand-91f0lx7p8iu802ux02et","Pain de mie · 4 tranches|Jambon blanc · 2 tranches|Comté (râpé) · 80 g|Beurre · 20 g|Maïzena · 20 g|Lait · 250 ml|Muscade · 2 pincées|Salade (Mélange) · 2 poignées","Four à 220 °C. Béchamel : beurre fondu + maïzena, puis lait jusqu'à épaississement ; sel, poivre, muscade. Laisser refroidir.|Tartiner les tranches de pain de béchamel.|Garnir de jambon et de la moitié du comté, refermer.|Couvrir du reste de béchamel et de comté, cuire 10 à 15 min.|Servir avec une salade verte.","ah"],
+["Salade de pâtes au pesto & jambon","Quick",15,2,"ODV1IC0sxM5qqg","salade-de-pates-au-pesto-et-jambon-94bw4mnjkrtphjwi02ic","Pâtes (Penne) · 160 g|Tomates cerises · 200 g|Concombre · 200 g|Jambon cru · 4 tranches|Sauce pesto · 2 c. à s.","Cuire les pâtes et les égoutter.|Couper les tomates cerises en deux et le concombre en dés.|Mélanger pâtes, légumes et pesto.|Servir avec le jambon cru déchiré par-dessus.","pe"],
+["Pâtes au ragoût de canard","Plat",23,2,"DDRcGvguFNr3rQ","pates-au-ragout-de-canard-87ig6h4if8cjltxm0rha","Pâtes (Pappardelle) · 200 g|Canard (confit) · 1|Tomate pelée · 140 g|Échalote · 1|Parmesan (râpé) · ½ c. à s.|Vin rouge · 20 ml","Cuire les pappardelle.|Effilocher le confit de canard en retirant le gras ; émincer les échalotes.|Faire revenir canard et échalotes 5 min à feu vif.|Ajouter tomates pelées et vin rouge, assaisonner, mijoter 5 min à couvert.|Faire sauter les pâtes 2 min dans la sauce, parmesan pour finir.","ah"],
+["Pâtes carbonara","Quick",15,2,"UD8vtS5s085tpg","pates-carbonara-7vkmjgzi5t8003pn0drm","Pâtes (spaghetti) · 200 g|Pancetta · 6 tranches|Œuf · 2|Parmesan (morceaux) · 80 g","Couper la pancetta et la dorer 5 min à la poêle.|Cuire les spaghetti en gardant une petite louche d'eau de cuisson.|Fouetter les jaunes avec l'eau de cuisson, puis ajouter le parmesan râpé et du poivre.|Hors du feu, mélanger pâtes, pancetta et crème aux jaunes.|Servir avec un peu de parmesan.",""],
+["Rôti de bœuf & purée","Plat",29,4,"TyUoV0LJ7CmruA","roti-de-boeuf-et-puree-8fesf6e84bdccbzc0qb0","Bœuf (rôti) · 520 g|Échalote · 1|Beurre · 180 g|Pommes de terre · 1 kg|Lait · 200 ml","Four à 220 °C. Poser le rôti sur des morceaux de beurre, ajouter beurre et échalote dessus, saler, poivrer.|Rôtir environ 20 min en arrosant à mi-cuisson (compter plus pour un gros rôti).|Cuire les pommes de terre en dés 15 min à l'eau.|Les écraser avec le lait et le reste du beurre, assaisonner.|Retirer la ficelle, trancher le rôti et servir avec la purée.","ah"],
+["Cuisse de poulet & légumes d'été rôtis","Plat",56,2,"Shs5KKnJS7KM3w","cuisse-de-poulet-et-legumes-d-ete-rotis-8i3x839wjp6ok6vq1e3j","Poulet (cuisse) · 2|Tomate · 2|Courgette · 1|Poivron (assortiment) · 1|Ail · ½ gousse|Basilic (frais) · ¼ botte|Huile d'olive","Four à 190 °C. Couper courgette, tomates et poivron.|Mettre les légumes dans un plat avec ail, basilic, sel, poivre et huile.|Poser les cuisses de poulet assaisonnées dessus.|Rôtir 50 min, servir avec du basilic frais.","e"],
+["Steak haché, courgettes & sauce tartare","Quick",13,2,"fNaQJTZLM0sGog","steak-hache-courgettes-et-sauce-tartare-93nc1hz4ko4w032g0e9n","Bœuf (steak haché surgelé) · 2|Courgette · 400 g|Yaourt Grec · 2 c. à s.|Échalote · ½|Câpres · 1 c. à s.|Cornichon · 4|Ciboulette · 2 brins|Huile d'olive","Hacher cornichons, câpres et échalote.|Sauce tartare : les mélanger au yaourt grec, saler, poivrer.|Poêler les courgettes en demi-lunes 5 à 6 min à couvert.|Cuire les steaks hachés 7 à 8 min en les retournant.|Servir avec la sauce et la ciboulette.","pe"],
+["Carpaccio de bœuf, sauce pesto","Entrée",6,2,"SMXO0RtpCtmyOA","carpaccio-de-boeuf-sauce-pesto-8ba185ya55k5ce361bd4","Bœuf (carpaccio) · 200 g|Sauce pesto · 2 c. à c.|Salade (roquette) · 4 poignées|Pignons de pin · 2 c. à s.|Parmesan (morceaux) · 30 g|Huile d'olive","Détendre le pesto avec 1 c. à s. d'huile d'olive par personne.|Faire griller les pignons à sec (facultatif).|Étaler le carpaccio, couvrir de roquette, parmesan, sauce et pignons ; sel, poivre, huile.","pe"],
+["Parmentier de courgettes au bœuf","Plat",64,2,"eTD0nNqyIUD70g","parmentier-de-courgettes-au-boeuf-8z6kis0rkz40031r0jw1","Bœuf (haché) · 250 g|Pommes de terre · 200 g|Courgette · 300 g|Oignon jaune · ½|Fromage râpé · 30 g|Basilic (frais) · ¼ botte|Beurre","Éplucher et couper pommes de terre et courgettes, les cuire 15 min à l'eau salée.|Four à 180 °C. Faire revenir l'oignon émincé 2 à 3 min, puis le bœuf haché 5 à 6 min.|Étaler la viande dans un plat beurré.|Écraser les légumes égouttés en purée et la répartir sur la viande.|Parsemer de fromage et gratiner 30 à 35 min. Basilic pour finir.","ea"],
+["Quiche artichaut & parma","Plat",60,6,"U6aHriRK0h7drg","quiche-artichaut-et-parma-8btrdugd6b1jdzgp10qd","Pâte brisée · 1|Mozzarella (boule) · 1|Artichauts marinés · 160 g|Jambon cru (Prosciutto) · 4 tranches|Œuf · 3|Lait · 100 ml|Crème liquide · 100 ml","Four à 180 °C. Foncer le moule, piquer la pâte et la précuire 5 min.|Battre œufs, lait, crème, sel et poivre.|Garnir le fond d'artichauts, de mozzarella déchirée et de jambon cru.|Verser l'appareil et cuire 45 min ; laisser reposer 10 min.","pe"],
+["One pan poulet & citron","Plat",54,2,"tevmmlnwJC1s0w","one-pan-poulet-et-citron-8uau0eovm8ojah3d0ddj","Poulet (cuisse) · 2|Olives vertes (dénoyautées) · 80 g|Citron jaune · 2 quartiers|Pommes de terre (primeur) · 400 g|Oignon rouge · ½|Ail · 1 gousse","Four à 200 °C. Couper l'oignon rouge en quartiers.|Marinade : huile d'olive, ail râpé, jus de citron, sel, poivre (thym).|Sur une plaque : pommes de terre, cuisses de poulet et oignon ; badigeonner et cuire 35 à 40 min.|Ajouter les olives et cuire encore 5 min.|Servir avec des rondelles de citron et du persil.",""],
+["Gratin gnocchi poulet & pesto rosso","Plat",60,2,"T45Aueu7n5Upag","gratin-gnocchi-poulet-et-pesto-rosso-8tanabqxk5xhkt600ruw","Gnocchi (à poêler) · 300 g|Poulet (escalope) · 2|Tomates cerises · 200 g|Courgette · 1|Oignon rouge · ½|Crème fraîche · 2 c. à s.|Sauce pesto rouge · 2 c. à s.|Huile d'olive","Four à 180 °C. Dorer les gnocchi 2 min, puis 3 min à couvert.|Couper tomates cerises, courgette (en fines lamelles), oignon rouge et poulet en dés.|Mélanger crème fraîche et pesto rosso.|Tout répartir dans un plat, napper de sauce, poivrer.|Cuire 35 à 40 min.","ea"],
+["Poulet, semoule & ratatouille","Quick",12,2,"Y8rTa27EmRRWfw","poulet-semoule-et-ratatouille-8nxtl5lalzpd3k4r0ayo","Poulet (escalope) · 2|Ratatouille · 200 g|Semoule · 140 g|Huile d'olive","Dorer le poulet 2 min à feu vif, le retourner et cuire 8 min à feu moyen.|Semoule : même volume d'eau bouillante, 5 min à couvert.|Réchauffer la ratatouille.|Servir le tout, avec du basilic si vous en avez.","e"],
+["Saucisse & lentilles","Plat",40,2,"WE6dtkh3YDv15w","saucisse-et-lentilles-8f7rhmw05aep170z0ywm","Lentilles (à cuire) · 140 g|Saucisse (fumée) · 2|Oignon jaune · ½|Carotte (frais) · 1|Huile d'olive","Émincer l'oignon, couper la carotte en rondelles ; les faire revenir 3 à 4 min.|Ajouter les lentilles 2 min, poivrer (feuille de laurier).|Mouiller avec 200 ml d'eau par personne et cuire 15 min.|Ajouter les saucisses coupées en deux, couvrir et cuire encore 15 min.","ah"],
+["Boulettes à la bolognaise","Plat",31,4,"UXjpOZ7o1Ik3ng","boulettes-a-la-bolognaise-83yv8ciqdi694bwr0uyv","Pâtes (spaghetti) · 400 g|Bœuf (haché) · 360 g|Parmesan (râpé) · 4 c. à s.|Échalote · 1|Tomate (purée) · 300 g|Œuf · 1|Chapelure · 4 c. à s.|Basilic (frais) · ½ botte|Huile d'olive","Émincer l'échalote ; la mélanger avec bœuf, œuf, chapelure et moitié du parmesan, saler, poivrer.|Former des boulettes et les dorer 5 min à la poêle.|Ajouter la purée de tomate et mijoter 3 à 4 min à feu doux.|Cuire les spaghetti, les ajouter à la sauce.|Servir avec le reste de parmesan et du basilic.","ah"],
+["Soupe de Tortellini","Quick",10,2,"UFEBzPu3wzfTqg","soupe-de-tortellini-83x4fct25i9ck5bo0rfo","Tortellini (Ricotta-épinards) · 220 g|Chair à saucisse · 100 g|Tomate (chair) · 160 g|Crème liquide · 40 ml|Épinard (frais) · 2 poignées|Oignon jaune · ½|Bouillon de volaille (cube) · ½|Parmesan (râpé) · 20 g|Huile d'olive","Émincer l'oignon et le faire revenir 1 min à l'huile.|Ajouter la chair à saucisse et la dorer 1 à 2 min.|Ajouter tomate, 250 ml d'eau par personne et le bouillon ; porter à ébullition.|Ajouter les tortellini, assaisonner et cuire 4 min à couvert.|Incorporer la crème et les épinards, servir avec du parmesan.","ah"],
+["Croque-madame au four","Plat",16,2,"TazGA1Oi8cGmaQ","croque-madame-au-four-84cxkhwf601u3n340yxe","Pain de mie · 4 tranches|Jambon blanc · 2 tranches|Fromage râpé · 120 g|Crème fraîche · 60 g|Parmesan (râpé) · 1 c. à s.|Beurre demi-sel · 10 g|Salade (Mélange) · 4 poignées|Œuf · 2","Four à 240 °C. Mélanger crème, parmesan, moitié du fromage râpé, sel et poivre.|Beurrer le pain d'un côté ; poser la moitié des tranches dans un plat beurré, beurre en haut.|Garnir de jambon et du reste de fromage, refermer, napper du mélange crémeux.|Cuire 10 min ; pendant ce temps, cuire les œufs au plat.|Poser un œuf sur chaque croque, servir avec une salade.","ah"],
+["Paupiette & petits pois","Plat",27,2,"CxNg6mm8GI3yZA","paupiette-et-petits-pois-8m1bil4f34j5ctf216nu","Veau (paupiette) · 2|Petits pois (surgelés) · 400 g|Échalote · 1|Vin blanc · 40 ml|Beurre · 40 g","Faire revenir l'échalote hachée 2 min dans la moitié du beurre.|Dorer les paupiettes 2 min par face.|Ajouter vin blanc, petits pois et 80 ml d'eau par personne ; saler, poivrer, cuire 20 min à couvert.|Finir avec le reste du beurre.","pe"],
+["Poulet à la moutarde & pommes de terre","Plat",19,2,"j0kN8m8EQG4Z6A","poulet-a-la-moutarde-et-pommes-de-terre-8vxk1y011ink03hh0wdb","Poulet (escalope) · 2|Pommes de terre grenailles (surgelées) · 300 g|Crème fraîche · 2 c. à s.|Moutarde · 2 c. à c.|Huile d'olive","Poêler les grenailles surgelées 8 à 10 min à l'huile.|Ajouter le poulet assaisonné et le cuire 3 à 4 min par face.|Ajouter crème fraîche et moutarde, enrober 2 à 3 min.","ah"],
+["Poulet coco & citron vert","Plat",25,2,"E0DfeN8s2pH17w","poulet-coco-et-citron-vert-8mjd1o4zg78lkva50n92","Poulet (escalope) · 2|Riz · 140 g|Échalote · 1|Épinard (frais) · 4 poignées|Lait de coco · 140 ml|Citron vert · ½|Coriandre (frais) · ¼ botte|Huile d'olive","Cuire le riz. Émincer l'échalote ; ouvrir les filets de poulet en deux dans l'épaisseur.|Dorer le poulet 3 min par face, réserver.|Dans la même poêle, faire revenir l'échalote 2 min, ajouter lait de coco et 50 ml d'eau par personne.|Remettre le poulet, ajouter les épinards, le zeste et le jus du citron vert ; mijoter 1 min.|Servir sur le riz avec la sauce et la coriandre.","pa"],
+["Gnocchi aux tomates crémeuses & prosciutto","Plat",17,2,"HDR4n29p1HJsbA","gnocchi-aux-tomates-cremeuses-et-prosciutto-95g7cvzlf8p3e1q60eqv","Gnocchi (à poêler) · 300 g|Jambon cru (Prosciutto) · 4 tranches|Tomates cerises · 200 g|Oignon rouge · ½|Chèvre frais · 80 g|Ail · ½ gousse|Miel (liquide) · 1 c. à c.|Basilic (frais) · 2 brins|Huile d'olive","Dorer les gnocchi 2 min, puis 3 min à couvert ; réserver.|Faire revenir oignon rouge émincé, tomates cerises et ail râpé 2 min, puis 4 à 5 min à couvert.|Ajouter miel, basilic et moitié du chèvre ; mélanger avec les gnocchi.|Servir avec le jambon cru et le reste du chèvre.","e"],
+["Steak haché aux échalotes & purée","Plat",24,2,"2u4V3G8tAVM9GQ","steak-hache-aux-echalotes-et-puree-8fmwj1rcarpska5106at","Bœuf (steak haché frais) · 2|Pommes de terre · 500 g|Échalote · 1|Lait · 60 ml|Beurre · 40 g","Cuire les pommes de terre en dés 15 min, les écraser avec lait et une partie du beurre.|Faire revenir l'échalote émincée 2 min dans le reste du beurre.|Saisir les steaks 1 min par face (plus selon goût), saler, poivrer.|Déglacer avec un peu d'eau et laisser réduire 1 à 2 min ; servir avec la purée.","ah"],
+["Lasagnes alla bolognese","Plat",68,4,"TRdED9Zht2VwBw","lasagnes-alla-bolognese-8dcybcvx08iakg7n0qod","Lasagnes (cru) · 180 g|Bœuf (haché) · 400 g|Tomate (purée) · 600 g|Mozzarella (boule) · 2|Oignon jaune · 1|Ail · 2 gousses|Beurre · 120 g|Maïzena · 120 g|Lait · 900 ml|Thym (feuilles) · 2 c. à c.|Basilic (frais) · 4 brins|Huile d'olive","Four à 180 °C. Faire revenir oignon émincé et ail 2 min, puis le bœuf haché 4 min.|Ajouter purée de tomate, thym et basilic ; saler, poivrer, laisser mijoter.|Béchamel : beurre fondu + maïzena, puis lait en fouettant 6 à 8 min jusqu'à épaississement.|Monter : béchamel, lasagnes, bolognaise, mozzarella ; répéter 3 fois, finir béchamel + mozzarella.|Cuire 40 min et servir avec une salade.","ah"],
+["Taboulé maison & chipolatas","Plat",21,2,"Jfezx1u03AB08g","taboule-maison-et-chipolatas-95c2k8jt6xvqefv803zx","Saucisse (chipolata) · 4|Semoule · 140 g|Concombre · 200 g|Tomate · 200 g|Oignon jaune · ½|Citron jaune · 2 quartiers|Persil (frais) · 4 brins|Menthe (feuilles) · 4 brins|Huile d'olive","Préparer la semoule (même volume d'eau bouillante, 5 min), l'égrener.|Couper concombre et tomates en dés, émincer l'oignon, hacher menthe et persil.|Mélanger avec la semoule, huile, jus de citron, sel, poivre ; réserver au frais.|Griller les chipolatas 10 min en les retournant.","e"],
+["Poulet miel moutarde & frites","Plat",18,2,"P9OHfZAwn1c5nA","poulet-miel-moutarde-et-frites-8vwwinl2kjpc03gv01g8","Frites surgelées · 300 g|Poulet (escalope) · 2|Crème fraîche · 60 g|Moutarde · 2 c. à c.|Miel (liquide) · 2 c. à c.|Oignon rouge · 1|Beurre","Four à 220 °C : cuire les frites selon le paquet.|Dorer le poulet avec l'oignon rouge émincé 3 min par face.|Ajouter 3 cl d'eau par personne et cuire 6 min à couvert ; réserver le poulet.|Dans la poêle, chauffer crème et moutarde, puis ajouter le miel.|Remettre le poulet dans la sauce et servir avec les frites.",""],
+["Bowl poulet, quinoa & tzatziki","Plat",16,2,"SSoyqJcfuxk5IQ","bowl-poulet-quinoa-et-tzatziki-8t1x81us2errlycn080j","Poulet (escalope) · 2|Quinoa (cru) · 150 g|Courgette · 2|Ail · ½ gousse|Salade (roquette) · 2 poignées|Tzatziki · 100 g|Huile d'olive","Cuire le quinoa.|Faire revenir les courgettes en morceaux 2 à 3 min avec l'ail râpé.|Ajouter le poulet et le cuire 4 à 5 min par face.|Dresser quinoa, courgettes, poulet, tzatziki et roquette ; filet d'huile.","pe"],
+["Cordon bleu, purée aux fines herbes & courgettes","Plat",21,2,"IRu5kb20Kx0uJg","cordon-bleu-puree-aux-fines-herbes-et-courgettes-9c3slw5jasb709z70stq","Cordon bleu (frais) · 2|Courgette · 400 g|Pommes de terre (four/purée) · 500 g|Fromage ail & fines herbes · 1 c. à s.|Huile d'olive","Cuire les pommes de terre en dés 15 min à l'eau salée.|Poêler les courgettes en demi-lunes 7 à 8 min.|Égoutter les pommes de terre (garder un peu d'eau) et les écraser avec le fromage ail & fines herbes.|Cuire les cordons bleus selon le paquet et servir le tout.","pe"],
+["Aiguillettes de bœuf & légumes poêlés","Quick",14,2,"x0ZwQ1iv18t00w","aiguillettes-de-boeuf-et-legumes-poeles-8n22m18b4q4mke3n0zt6","Bœuf (aiguillette) · 300 g|Poivron (assortiment) · 2|Oignon jaune · ½|Riz · 140 g|Sauce soja salée · 4 c. à s.|Tomates cerises · 200 g|Coriandre (frais) · ¼ botte|Huile d'olive","Cuire le riz. Émincer l'oignon et les poivrons.|Faire sauter oignon et poivrons 3 min à feu vif.|Ajouter tomates cerises et un peu d'eau, cuire 5 min à couvert, puis la sauce soja 1 min.|Saisir les aiguillettes 30 s par face.|Servir riz, légumes, bœuf et coriandre.","e"],
+["Pad Thaï poulet","Quick",11,2,"76DlTDazQ563iA","pad-thai-poulet-854c6aqz7ypx5gy60c1i","Nouilles de riz · 160 g|Poulet (escalope) · 2|Ail · 1 gousse|Sauce soja salée · 3 c. à s.|Beurre de cacahuète · 2 c. à c.|Citron vert · ½|Pousses de haricots mungo · 80 g|Cacahuète · 40 g|Coriandre (frais) · ¼ botte|Huile d'olive|Sucre (en poudre)","Sauce : sauce soja, beurre de cacahuète, jus de citron vert, un peu de sucre et d'eau.|Faire revenir le poulet en morceaux avec l'ail 3 à 4 min à feu vif.|Cuire les nouilles, puis les ajouter à la poêle avec les pousses de soja et la sauce ; 2 à 3 min.|Servir avec cacahuètes, coriandre et citron vert.",""],
+["Bouillon de légumes & poulet","Plat",21,2,"dDSRFDyxAcTsXQ","bouillon-de-legumes-et-poulet-8k17cwq9j32oksb30jh9","Poulet (escalope) · 1|Oignon rouge · 1|Carotte (frais) · 2|Poireau · 1|Bouillon de volaille (cube) · ½|Thym (feuilles) · 2 pincées|Huile d'olive","Émincer carottes, oignon et poireau.|Les faire revenir à l'huile avec le thym, sel et poivre.|Ajouter le cube, le poulet et 25 cl d'eau par personne ; cuire 10 min à couvert.|Effilocher le poulet, le remettre dans le bouillon 5 min. Servir avec un filet d'huile.","ah"],
+["Cordon bleu & purée maison","Plat",32,2,"VJVUnJUZ7vKUkA","cordon-bleu-et-puree-maison-84y1jytd4ho2k0ol1dq7","Poulet (escalope) · 2|Jambon blanc · 2 tranches|Emmental · 20 g|Chapelure · 2 c. à s.|Œuf · 1|Pommes de terre · 500 g|Beurre · 40 g|Lait · 100 ml","Aplatir les escalopes, y mettre jambon et emmental, replier.|Paner deux fois : œuf battu puis chapelure.|Dorer au beurre 5 min par face, puis 10 min à feu doux à couvert.|Cuire les pommes de terre 15 min et les écraser avec beurre et lait.|Servir les cordons bleus avec la purée.","ah"],
+["Tex-Mex Fajitas","Plat",19,4,"O6o8fUU1mPyxaw","tex-mex-fajitas-87i1gurn91cy4lvc0c87","Kit fajitas · 4|Poulet (escalope) · 4|Haricots rouges (cuits) · 280 g|Maïs (conserve) · 280 g|Avocat · 2|Coriandre (frais) · ½ botte|Huile d'olive","Couper le poulet en lamelles.|Le dorer 5 min avec les épices du kit (¼ de sachet par personne).|Ajouter maïs et haricots rouges égouttés, 2 min à feu vif, puis laisser à couvert.|Écraser l'avocat avec sel, poivre et un peu de citron.|Garnir les tortillas : avocat, poulet, salsa et coriandre.",""],
+["Bouillon de ravioles du Dauphiné","Plat",24,2,"oGmYTjTClS","bouillon-de-ravioles-du-dauphine-82dh1hiwj31s00z80rkv","Ravioles du Dauphiné · 240 g|Champignons de Paris (frais) · 300 g|Bouillon de volaille (cube) · ½|Échalote · 1|Persil (frais) · 2 brins|Huile d'olive","Passer les plaques de ravioles 10 min au congélateur pour les détacher facilement.|Faire revenir l'échalote ciselée 1 à 2 min, puis les champignons émincés 3 à 4 min à feu vif.|Ajouter le bouillon (cube + 250 ml d'eau par personne), porter à ébullition et mijoter 10 min.|Ajouter les ravioles 2 min. Servir avec du persil.","ah"],
+["Rougail saucisse","Plat",22,2,"Usuk4WwIWwIvag","rougail-saucisse-8jx36xgc2ti8kzzk107c","Saucisse (fumée) · 2|Oignon jaune · ½|Ail · 1 gousse|Riz · 140 g|Gingembre (frais) · 10 g|Tomate pelée · 200 g|Curcuma (poudre) · 2 pincées","Cuire le riz.|Faire revenir oignon émincé, curcuma et saucisse en rondelles 2 min.|Râper ail et gingembre, remuer 1 min.|Ajouter tomates pelées et un peu d'eau, cuire 15 min à couvert. Servir avec le riz.","ah"],
+["Chou braisé à la saucisse","Plat",42,2,"eZFfhGHZ3vf3NA","chou-braise-a-la-saucisse-8xnoki59awhs02vz0jx5","Carotte (frais) · 2|Pommes de terre · 300 g|Chou frisé (pièce) · 400 g|Oignon jaune · ½|Saucisse de Montbéliard · 2|Lardons · 100 g|Bouillon de légumes (cube) · ½","Couper carottes en rondelles, pommes de terre en demi-lunes, émincer oignon et chou (bien rincé).|Faire revenir oignon, lardons et chou 3 à 4 min.|Ajouter le bouillon, mijoter 5 à 6 min à couvert.|Ajouter carottes, pommes de terre et saucisse en rondelles ; mijoter 15 à 20 min.","ah"],
+["Bœuf thaï","Quick",13,2,"clJsumdInEYj3w","boeuf-thai-88g1j0yb954hhii00m1k","Bœuf (bavette) · 2|Riz · 140 g|Oignon jaune · ½|Sauce soja salée · 2 c. à s.|Gingembre (frais) · 1 cm|Citron vert · ½|Salade (roquette) · 2 poignées|Huile d'olive","Cuire le riz.|Mariner le bœuf en lamelles 5 min avec sauce soja, gingembre, jus de citron vert et oignon émincé.|Saisir le tout 1 à 2 min à feu vif.|Servir avec le riz, la roquette et de la ciboulette.",""],
+["Chili con carne","Plat",22,2,"dXYJaP0FdUdinQ","chili-con-carne-7w24ab9oivfk03mz13x0","Bœuf (haché) · 200 g|Tomate (chair) · 200 g|Origan (séché) · 2 pincées|Haricots rouges (cuits) · 200 g|Tabasco · 1 c. à c.|Oignon rouge · ½|Chili (épices) · 2 c. à c.|Riz · 140 g|Crème fraîche · 2 c. à s.|Coriandre (frais) · ¼ botte|Huile d'olive","Faire revenir l'oignon émincé 2 min, puis le bœuf haché 5 min.|Ajouter haricots rouges, chair de tomate, chili, Tabasco et origan.|Cuire 10 min à couvert à feu doux ; pendant ce temps, cuire le riz.|Servir avec une cuillère de crème fraîche et de la coriandre.","ah"],
+["Poulet aux olives & purée express à la feta","Plat",46,2,"eXiAiDvk7gZfnA","poulet-aux-olives-et-puree-express-a-la-feta-8rhlm2dhk6zai12l0h04","Purée de pommes de terre (en flocons) · ½ sachet|Poulet (cuisse) · 2|Olives vertes (dénoyautées) · 60 g|Oignon jaune · ½|Lait · 200 ml|Feta · 60 g|Citron jaune · 2 quartiers|Huile d'olive|Beurre","Faire revenir l'oignon émincé 3 min, dorer les cuisses de poulet 3 min par face.|Ajouter 70 ml d'eau par personne, zeste et jus de citron ; mijoter 25 à 30 min à couvert.|Purée : porter lait + 85 ml d'eau par personne à ébullition, tiédir, ajouter les flocons, beurre et feta émiettée.|Ajouter les olives au poulet 1 min et servir avec la purée.","ah"],
+["Ramen au bœuf","Quick",10,2,"GnYx7QZdtPk0Pw","ramen-au-boeuf-83qki606cypjgyml0ml7","Nouilles instantanées (bœuf) · 2|Œuf · 2|Bœuf (carpaccio) · 100 g|Sauce soja salée · 2 c. à s.|Ciboulette · ¼ botte","Cuire les œufs 6 min, les refroidir et les écaler.|Cuire les nouilles dans 200 ml d'eau par personne avec l'assaisonnement du sachet.|Servir en bol avec la sauce soja, le carpaccio de bœuf, les œufs coupés en deux et la ciboulette.","ah"],
+["Les classiques coquillettes au jambon","Quick",7,2,"68gzrlmQUS","les-classiques-coquillettes-au-jambon-7w9qimf8htq803qe0sh7","Pâtes (coquillettes) · 200 g|Jambon blanc · 2 tranches|Beurre","Cuire les coquillettes dans l'eau salée.|Couper le jambon en morceaux.|Égoutter, ajouter une belle noix de beurre et le jambon.",""],
+["Gnocchi façon carbonara","Plat",18,2,"MHqaVeCqrXr6mw","gnocchi-facon-carbonara-92o67rnc1zgg032j0pxv","Gnocchi (à poêler) · 300 g|Lardons · 150 g|Crème liquide · 2 c. à s.|Oignon jaune · ½|Parmesan (râpé) · 40 g|Huile d'olive","Faire revenir oignon émincé et lardons 5 à 6 min, réserver.|Dorer les gnocchi 2 min, puis 3 min à couvert.|Remettre lardons et oignons, ajouter crème et parmesan ; cuire 3 à 4 min.|Servir avec du parmesan.","ah"],
+["Poulet pané à la milanaise","Plat",18,2,"R4QCAjrWGsWrYA","poulet-pane-a-la-milanaise-8g6umbit8zwwke920uso","Poulet (escalope) · 2|Œuf · 2|Farine de blé · 4 c. à s.|Chapelure · 6 c. à s.|Pâtes (Tagliatelle sèches) · 200 g|Sauce tomate (basilic) · 200 g|Piment (doux) · 1 pincée|Huile · 100 ml","Cuire les tagliatelle.|Paner le poulet : farine, œuf battu (sel, poivre, piment doux), chapelure — deux fois pour plus de croustillant.|Frire dans un fond d'huile 5 à 6 min par face, égoutter sur papier absorbant.|Réchauffer la sauce tomate avec les pâtes.|Servir le poulet tranché avec les pâtes.",""],
+["Gnocchi à la bolognaise","Quick",9,2,"qUZvfuoSfLY0GA","gnocchi-a-la-bolognaise-8k9h5a1adi3bi18n01ma","Gnocchi (à poêler) · 250 g|Tomate (purée) · 200 g|Bœuf (haché) · 200 g|Échalote · ½|Crème fraîche · 2 c. à s.|Basilic (frais) · ¼ botte|Huile d'olive","Émincer l'échalote.|Faire revenir échalote, bœuf haché et gnocchi 4 min en remuant.|Ajouter la purée de tomate, cuire 2 min à couvert.|Incorporer la crème fraîche, parsemer de basilic.","ah"],
+["Croque-monsieur jambon & pesto","Plat",25,2,"XVWBYQQ3mcPR6g","croque-monsieur-jambon-et-pesto-8y5udzge5h9c03010li8","Pain de mie (seigle) · 4 tranches|Jambon blanc · 2 tranches|Crème fraîche · 60 g|Mozzarella (râpée) · 120 g|Sauce pesto · 2 c. à c.|Parmesan (râpé) · 2 c. à s.|Salade (Mélange) · 2 poignées","Four à 220 °C. Mélanger crème, moitié de la mozzarella et parmesan ; poivrer.|Tartiner la moitié des tranches de pesto, les poser dans un plat.|Ajouter jambon et reste de mozzarella, refermer.|Napper du mélange crémeux, cuire 15 à 20 min. Servir avec une salade.",""],
+["Banh mi","Quick",14,2,"s4hcFCY07qCAig","banh-mi-8581ac9923p3gwbs0gbz","Carotte (frais) · 100 g|Concombre · 100 g|Pain (baguette) · 200 g|Poulet (escalope) · 2|Ail · 1 gousse|Mayonnaise · 1 c. à s.|Sauce piment (Sriracha) · 1 c. à c.|Vinaigre de riz · 2 c. à s.|Sauce soja salée · 2 c. à s.|Coriandre (frais) · ¼ botte|Huile d'olive","Tailler carotte et concombre en rubans, les faire mariner dans le vinaigre de riz.|Faire sauter le poulet en lamelles 4 min à feu vif avec ail, sauce soja, huile et un peu de sucre.|Mélanger mayonnaise et sriracha.|Ouvrir le pain, tartiner de sauce, garnir de poulet, légumes égouttés et coriandre.","pe"],
+["Poulet citron olives & couscous","Plat",34,2,"3Z770u7ia0E0SQ","poulet-citron-olives-et-couscous-8445hlc5ib83gci40rpt","Poulet (cuisse) · 2|Semoule · 120 g|Oignon jaune · ½|Olives vertes (dénoyautées) · 60 g|Bouillon de volaille (cube) · ½|Citron jaune · ½|Cumin (moulu) · 1 c. à c.|Gingembre (moulu) · 1 c. à c.|Huile d'olive","Faire revenir oignon émincé, cumin et gingembre 2 à 3 min.|Dorer les cuisses de poulet 6 à 7 min.|Ajouter bouillon (cube + 100 ml d'eau par personne), zeste et jus de citron ; mijoter 20 min à couvert.|Préparer la semoule (même volume d'eau chaude, 5 min).|Ajouter les olives 2 à 3 min et servir avec la semoule.",""],
+["Enchiladas au bœuf","Plat",33,2,"kTHX7vgHs5oNug","enchiladas-au-boeuf-83ys9kr0208newew0h5a","Tortilla (maïs) · 4|Poivron rouge · 1|Tomate (chair) · 130 g|Bœuf (steak haché frais) · 2|Crème fraîche · 2 c. à s.|Cheddar (râpé) · 40 g|Oignon jaune · 1|Huile d'olive","Four à 200 °C. Couper le poivron en dés et émincer l'oignon ; les cuire 6 à 7 min à couvert.|Ajouter le bœuf haché et un tiers de la chair de tomate, mijoter 5 min.|Garnir les tortillas de crème fraîche et de farce, les rouler dans un plat.|Couvrir du reste de tomate et de cheddar, cuire 15 min.","ea"],
+["Parmentier de canard","Plat",60,2,"egoSb1AZFSivnQ","parmentier-de-canard-7xzy77y669og045a0mmg","Canard (confit) · 1|Noisette · 20 g|Échalote · 1|Pommes de terre · 400 g|Lait · 100 ml|Beurre · 20 g","Four à 200 °C. Cuire les pommes de terre 20 min à l'eau salée.|Émincer l'échalote, concasser les noisettes, effilocher le canard sans le gras.|Faire revenir l'échalote 2 min dans un peu de graisse de canard, puis le canard 3 min.|Écraser les pommes de terre avec beurre et lait.|Canard au fond du plat, purée dessus, noisettes ; cuire 25 min.","ah"],
+["Steak haché, purée & haricots verts","Plat",24,2,"iOGBDe3yGhrcBQ","steak-hache-puree-et-haricots-verts-8fe56r36f94wk4s6161o","Bœuf (steak haché frais) · 2|Pommes de terre · 300 g|Échalote · 1|Haricot vert (frais) · 200 g|Lait · 60 ml|Beurre · 40 g","Cuire les pommes de terre en dés 15 min et les haricots verts 12 min.|Écraser les pommes de terre avec lait et une partie du beurre.|Faire revenir l'échalote émincée 2 min dans le reste du beurre, saisir les steaks 1 min par face.|Déglacer avec un peu d'eau, réduire 1 à 2 min. Servir le tout.","e"],
+["Poêlée de pommes de terre & saucisse fumée","Plat",30,2,"00k5hkPMHoNHaA","poelee-de-pommes-de-terre-et-saucisse-fumee-8q4ud8q9c0wi9yb01cv8","Pommes de terre · 4|Saucisse (fumée) · 2|Échalote · 1|Oignon jaune · ½|Ail · 1 gousse|Thym (feuilles) · 2 pincées|Huile d'olive","Couper les pommes de terre en dés et les poêler au moins 10 min à couvert.|Faire revenir oignon, échalote, saucisse en rondelles et ail 3 min dans une autre poêle.|Réunir le tout avec le thym et cuire 10 min à couvert.","ah"],
+["Steak \"à la mexicaine\"","Plat",19,2,"0FE90VZnHngmdA","steak-a-la-mexicaine-8yehawj1iixc02x10qp1","Bœuf (steak) · 2|Riz · 140 g|Poivron (assortiment) · 1|Oignon rouge · ½|Avocat · ½|Mélange épices mexicaines · 2 pincées|Citron vert · ½","Cuire le riz. Émincer poivron et oignon rouge.|Les faire revenir 5 à 6 min, puis 4 à 5 min à couvert avec un peu d'eau.|Ajouter les épices mexicaines et cuire encore 3 à 4 min.|Griller le steak 2 min par face, le laisser reposer puis le trancher.|Servir riz, poivrons, avocat en dés, steak et citron vert.","e"],
+["Purée maison & jambon","Plat",27,2,"0lH56hR5csadXg","puree-maison-et-jambon-89uflbr3c75elfkk0am7","Jambon blanc · 2 tranches|Pommes de terre · 500 g|Lait · 100 ml|Beurre · 40 g|Muscade · 2 pincées","Cuire les pommes de terre en dés 20 min à l'eau salée.|Les écraser avec lait, beurre et muscade ; saler, poivrer.|Servir avec le jambon et une salade verte.","ah"],
+["Blanquette de boudin blanc & riz","Plat",40,2,"JB1SFWec0l9V5Q","blanquette-de-boudin-blanc-et-riz-95iom140lo96fruu0p6b","Boudin blanc · 2|Riz · 140 g|Poireau · 200 g|Champignons de Paris (frais) · 200 g|Ail · ½ gousse|Vin blanc · 40 ml|Crème liquide · 60 ml|Huile d'olive","Cuire le riz. Émincer champignons et poireau (bien rincé) ; couper le boudin en rondelles.|Dorer le boudin 2 min par face, réserver.|Faire revenir poireau et champignons 4 à 5 min, puis l'ail ; déglacer au vin blanc.|Ajouter 80 ml d'eau par personne et mijoter 15 min à couvert.|Ajouter crème et boudin, servir avec le riz.","ah"],
+["Steak & salade de pâtes à l'italienne","Quick",8,2,"klmwS4w2GXvHQA","steak-et-salade-de-pates-a-l-italienne-8t9wh7o7l9a85ifk0m0b","Bœuf (steak) · 2|Pâtes (Penne) · 120 g|Tomates cerises · 200 g|Salade (roquette) · 2 poignées|Mozzarella (boule) · 1|Sauce pesto · 2 c. à c.|Huile d'olive","Cuire les penne, les rafraîchir à l'eau froide.|Couper tomates cerises et mozzarella.|Saisir le steak 2 min par face, le laisser reposer.|Mélanger pâtes, tomates, roquette, mozzarella, huile et pesto ; servir avec le steak.","e"],
+["Pommes de terre en robe des champs au saumon fumé","Plat",73,2,"1hpf9JmVzrPNZQ","pommes-de-terre-en-robe-des-champs-au-saumon-fume-92hm2v701ysg032n0a0q","Pommes de terre (four/purée) · 300 g|Saumon (fumé) · 2 tranches|Sauce pommes de terre · 2 c. à s.|Salade (Mélange) · 2 poignées|Échalote · 1|Câpres · 2 c. à c.|Citron jaune · 2 quartiers|Aneth (frais) · 2 brins","Four à 200 °C. Envelopper les pommes de terre d'aluminium et les cuire 60 à 65 min.|Émincer finement l'échalote.|Couper les pommes de terre en deux, garnir de sauce, saumon fumé, échalote, câpres et aneth.|Servir avec une salade et un trait de citron.","ah"],
+["Hachis parmentier saumon & fines herbes","Plat",55,2,"1fbKzT5BJcw4Og","hachis-parmentier-saumon-et-fines-herbes-8m1bit0v34j5ctf216rl","Pommes de terre · 400 g|Saumon (frais) · 2|Lait · 100 ml|Fromage ail & fines herbes · 100 g|Chapelure · 20 g|Ciboulette · ¼ botte|Beurre","Cuire les pommes de terre 15 min à l'eau salée. Couper le saumon sans peau en cubes.|Four à 200 °C. Écraser les pommes de terre avec lait et fromage aux fines herbes.|Saumon dans un plat beurré, purée par-dessus.|Parsemer de chapelure et de noisettes de beurre, cuire 30 min. Ciboulette pour finir.","ah"],
+["Chirashi au saumon & avocat","Plat",22,2,"wcQhjbOgzWIljQ","chirashi-au-saumon-et-avocat-93qsj6mf02mo03290ufq","Riz (à sushi) · 140 g|Saumon (cru) · 2|Avocat · 1|Vinaigre de riz · 2 c. à s.|Sucre (en poudre) · 2 c. à c.|Sauce soja salée · 2 c. à s.|Graines de sésame · 2 c. à c.|Ciboulette · ½ botte","Utiliser du saumon préalablement surgelé puis décongelé. Rincer et cuire le riz à sushi.|Couper le saumon en cubes et le mélanger à la sauce soja.|Mélanger vinaigre de riz, sucre et une pincée de sel ; l'incorporer au riz tiédi.|Servir le riz avec saumon, avocat en cubes, ciboulette et sésame.","pe"],
+["Sashimi bowl","Plat",16,2,"X8i0Cg4CWcOSdQ","sashimi-bowl-89w6l9kvc75elfkk0dx6","Saumon (surgelé) · 2|Oignon rouge · ½|Citron jaune · 2 quartiers|Câpres · 1 c. à s.|Huile d'olive · 1 c. à s.|Riz (à sushi) · 140 g","Utiliser du saumon préalablement surgelé puis décongelé. Cuire le riz.|Trancher finement le saumon et l'oignon rouge.|Dresser riz, saumon, oignon et câpres ; huile d'olive et jus de citron.","pe"],
+["Pâtes sans gluten crémeuses au saumon & citron","Quick",14,2,"WWmc0mJUKpj4cQ","pates-sans-gluten-cremeuses-au-saumon-et-citron-944wdol0a9oyktz209vs","Pâtes sans-gluten (longues) · 200 g|Saumon (fumé) · 4 tranches|Parmesan (morceaux) · 20 g|Crème fraîche · 2 c. à s.|Citron jaune · 2 quartiers","Cuire les pâtes et les égoutter.|Dans la casserole, ajouter crème fraîche, zeste et jus de citron.|Ajouter le saumon fumé en morceaux et le parmesan, mélanger.|Servir avec zestes et parmesan.",""],
+["Colin façon puttanesca","Plat",18,2,"bqJuEiqGcAgs0g","colin-facon-puttanesca-90blmeojk6pc02v6015h","Colin (surgelé) · 2|Riz · 140 g|Oignon jaune · ½|Sauce tomate (Napolitaine) · 200 g|Crème liquide · 2 c. à c.|Olives noires (dénoyautées) · 30 g|Ail · 1 gousse|Origan (séché) · 2 pincées|Câpres · 2 c. à c.|Huile d'olive","Cuire le riz. Émincer l'oignon, hacher les olives.|Faire revenir oignon et ail 3 à 4 min, ajouter câpres et sauce tomate 1 à 2 min.|Ajouter origan, olives, un peu d'eau puis la crème ; saler, poivrer.|Poser les filets de colin surgelés, napper et cuire 6 min à couvert.|Servir avec le riz et du basilic.",""]];
+
+/* =====================================================================
+   ÉTAT
+   ===================================================================== */
+let recipes = [];
+const filters = { query: '', season: '', category: '', maxTime: 0 };
+let editingId = null;
+let viewingId = null;
+
+/* =====================================================================
+   UTILITAIRES
+   ===================================================================== */
+const $ = (s, root = document) => root.querySelector(s);
+const $$ = (s, root = document) => [...root.querySelectorAll(s)];
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const normalize = (s) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const haptic = (ms = 10) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { /* iOS : non supporté */ } };
+
+function hash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function isValidUrl(v) {
+  try { const u = new URL(v); return ['http:', 'https:', 'data:'].includes(u.protocol); } catch (e) { return false; }
+}
+function formatTime(min) {
+  const m = Math.round(Number(min) || 0);
+  if (m <= 0) return '—';
+  if (m < 60) return `${m} min`;
+  return m % 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}` : `${m / 60} h`;
+}
+function toLines(text) {
+  return String(text || '').split(/\r?\n/)
+    .map((l) => l.replace(/^\s*(?:\d+\s*[.)-]|[-•*–])\s*/, '').trim())
+    .filter(Boolean);
+}
+function currentSeason() {
+  return ['h', 'h', 'p', 'p', 'p', 'e', 'e', 'e', 'a', 'a', 'a', 'h'][new Date().getMonth()];
+}
+function recipeSeasons(r) {
+  const list = (r.seasons || []).filter((s) => SEASONS[s]);
+  return list.length ? list : SEASON_KEYS;
+}
+// Fonds des photos détourées : nuances claires de la palette
+const PHOTO_TINTS = ['#EFE4D6', '#E6D5C1', '#EBDDD2', '#E4E3D4', '#DDE0D2', '#F2E8DC'];
+function tint(r) {
+  return PHOTO_TINTS[hash(r.title) % PHOTO_TINTS.length];
+}
+
+/* =====================================================================
+   PHOTOS : fichier publié avec la page → photo Jow en ligne → visuel coloré
+   ===================================================================== */
+function jowKey(url) {
+  const m = /static\.jow\.fr\/[^/]+\/recipes\/([A-Za-z0-9_-]+)\.png/.exec(url || '');
+  return m ? m[1] : null;
+}
+function photoSources(r) {
+  const list = [];
+  const key = jowKey(r.image);
+  if (key && location.protocol !== 'file:') list.push(`img/${key}.webp`);
+  if (r.image && isValidUrl(r.image)) list.push(key ? `https://static.jow.fr/480x600/recipes/${key}.png.webp` : r.image);
+  return list;
+}
+function placeholderHTML(r) {
+  const cat = CATEGORIES[r.category] || CATEGORIES.Plat;
+  return `<div class="ph" aria-hidden="true">${cat.emoji}</div>`;
+}
+function mediaHTML(r, { className = 'media', ratio = '', eager = false } = {}) {
+  const srcs = photoSources(r);
+  const style = `--tint:${tint(r)};${ratio ? `aspect-ratio:${ratio};` : ''}`;
+  if (!srcs.length) return `<div class="${className} is-loaded" style="${style}">${placeholderHTML(r)}</div>`;
+  return `<div class="${className}" style="${style}"><img src="${esc(srcs[0])}" data-next="${esc(srcs.slice(1).join(' '))}" data-emoji="${esc((CATEGORIES[r.category] || CATEGORIES.Plat).emoji)}" alt="" ${eager ? '' : 'loading="lazy"'} decoding="async" draggable="false"></div>`;
+}
+// load / error ne remontent pas : écoute en phase de capture
+document.addEventListener('load', (e) => {
+  if (e.target.tagName === 'IMG' && e.target.parentElement) e.target.parentElement.classList.add('is-loaded');
+}, true);
+document.addEventListener('error', (e) => {
+  const img = e.target;
+  if (img.tagName !== 'IMG' || !img.parentElement) return;
+  const next = (img.dataset.next || '').split(' ').filter(Boolean);
+  if (next.length) {
+    img.dataset.next = next.slice(1).join(' ');
+    img.src = next[0];
+    return;
+  }
+  const box = img.parentElement;
+  if (box.id === 'photo-preview') return;
+  box.classList.add('is-loaded');
+  box.innerHTML = `<div class="ph" aria-hidden="true">${esc(img.dataset.emoji || '🍽️')}</div>`;
+}, true);
+
+/* =====================================================================
+   STOCKAGE LOCAL
+   ===================================================================== */
+function sanitize(r) {
+  if (!r || typeof r !== 'object' || !String(r.title || '').trim()) return null;
+  return {
+    id: String(r.id || uid()),
+    title: String(r.title).slice(0, 200),
+    image: typeof r.image === 'string' ? r.image : '',
+    category: CATEGORIES[r.category] ? r.category : 'Plat',
+    minutes: Math.max(0, Number(r.minutes) || 0),
+    servings: Number(r.servings) > 0 ? Math.round(Number(r.servings)) : null,
+    source: typeof r.source === 'string' ? r.source : '',
+    seasons: Array.isArray(r.seasons) ? r.seasons.filter((s) => SEASONS[s]) : undefined,
+    ingredients: Array.isArray(r.ingredients) ? r.ingredients.map(String) : [],
+    steps: Array.isArray(r.steps) ? r.steps.map(String) : [],
+    createdAt: Number(r.createdAt) || Date.now()
+  };
+}
+function expandJowRecipes() {
+  const now = Date.now();
+  return JOW_RECIPES.map(([title, category, minutes, servings, img, slug, ing, steps, seasons], i) => ({
+    id: 'jow-' + slug.slice(-8),
+    title, category, minutes, servings,
+    image: `https://static.jow.fr/480x600/recipes/${img}.png.webp`,
+    source: `https://jow.fr/recipes/${slug}`,
+    seasons: seasons ? seasons.split('') : [],
+    ingredients: ing.split('|'),
+    steps: steps.split('|'),
+    createdAt: now - i * 1000
+  }));
+}
+function loadRecipes() {
+  try {
+    let parsed = [];
+    try { parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch (e) { parsed = []; }
+    recipes = (Array.isArray(parsed) ? parsed : []).map(sanitize).filter(Boolean);
+
+    const jow = expandJowRecipes();
+    const jowById = new Map(jow.map((r) => [r.id, r]));
+    // Recettes Jow enregistrées avant l'ajout des saisons
+    recipes.forEach((r) => { if (!r.seasons && jowById.has(r.id)) r.seasons = jowById.get(r.id).seasons; });
+
+    // Import par lots : seules les nouvelles entrées sont ajoutées, sans doublon
+    const stored = localStorage.getItem(JOW_IMPORT_KEY);
+    const done = stored !== null ? parseInt(stored, 10) || 0 : (localStorage.getItem(JOW_IMPORT_LEGACY_KEY) !== null ? 66 : 0);
+    if (done < jow.length) {
+      const known = new Set(recipes.flatMap((r) => [r.source, normalize(r.title)]).filter(Boolean));
+      recipes.push(...jow.slice(done).filter((r) => !known.has(r.source) && !known.has(normalize(r.title))));
+      localStorage.setItem(JOW_IMPORT_KEY, String(jow.length));
+    }
+    saveRecipes(true);
+  } catch (e) {
+    // Stockage indisponible (navigation privée stricte…) : on travaille en mémoire
+    recipes = expandJowRecipes();
+  }
+}
+function saveRecipes(silent = false) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
+    return true;
+  } catch (e) {
+    if (!silent) showToast('Enregistrement impossible : l’espace de stockage du téléphone est plein ou bloqué.', 'error');
+    return false;
+  }
+}
+
+/* =====================================================================
+   FONCTIONS PRINCIPALES
+   ===================================================================== */
+
+/** Ajoute ou met à jour une recette depuis le formulaire */
+function addRecipe() {
+  const title = $('#f-title').value.trim();
+  if (!title) {
+    $('#field-title').classList.add('is-invalid');
+    $('#title-error').hidden = false;
+    $('#f-title').focus();
+    $('#field-title').scrollIntoView({ block: 'center', behavior: 'smooth' });
+    haptic(30);
+    showToast('Le titre est obligatoire', 'error');
+    return false;
+  }
+  const rawTime = parseFloat(String($('#f-time').value).replace(',', '.'));
+  const unit = $('input[name="unit"]:checked').value;
+  const image = $('#f-image').value.trim();
+  const source = $('#f-source').value.trim();
+  const data = {
+    title,
+    image: isValidUrl(image) ? image : '',
+    category: ($('input[name="category"]:checked') || {}).value || 'Plat',
+    minutes: isNaN(rawTime) || rawTime < 0 ? 0 : Math.round(unit === 'h' ? rawTime * 60 : rawTime),
+    servings: parseInt($('#f-servings').value, 10) || null,
+    source: isValidUrl(source) ? source : '',
+    seasons: $$('input[name="season"]:checked').map((i) => i.value),
+    ingredients: toLines($('#f-ingredients').value),
+    steps: toLines($('#f-steps').value)
+  };
+
+  if (editingId) {
+    const id = editingId;
+    recipes = recipes.map((r) => (r.id === id ? { ...r, ...data } : r));
+    saveRecipes();
+    renderRecipes();
+    showToast('✅ Recette modifiée');
+    viewRecipe(id, $('#form-sheet'));
+  } else {
+    recipes.unshift({ id: uid(), createdAt: Date.now(), ...data });
+    saveRecipes();
+    resetFilters();
+    closeLayer($('#form-sheet'));
+    renderRecipes();
+    showToast('✅ Recette ajoutée');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  return true;
+}
+
+/** Supprime une recette. confirm=false quand le geste (swipe) vaut confirmation : annulation possible. */
+async function deleteRecipe(id, { confirm = true } = {}) {
+  const index = recipes.findIndex((r) => r.id === id);
+  if (index < 0) return false;
+  const recipe = recipes[index];
+  if (confirm) {
+    const choice = await openActionSheet({
+      title: 'Supprimer cette recette ?',
+      message: `« ${recipe.title} » sera retirée de votre carnet.`,
+      actions: [{ key: 'delete', label: '🗑️ Supprimer', danger: true }]
+    });
+    if (choice !== 'delete') return false;
+  }
+  recipes.splice(index, 1);
+  saveRecipes();
+  if (viewingId === id) closeLayer($('#detail-sheet'));
+  renderRecipes();
+  haptic(20);
+  showToast('Recette supprimée', 'success', {
+    action: 'Annuler',
+    onAction: () => {
+      recipes.splice(Math.min(index, recipes.length), 0, recipe);
+      saveRecipes();
+      renderRecipes();
+      showToast('↩️ Recette restaurée');
+    }
+  });
+  return true;
+}
+
+/** Recettes après recherche + filtres */
+function filteredRecipes() {
+  return searchRecipes(filters.query).filter((r) =>
+    (!filters.season || recipeSeasons(r).includes(filters.season)) &&
+    (!filters.category || r.category === filters.category) &&
+    (!filters.maxTime || (r.minutes > 0 && r.minutes <= filters.maxTime))
+  );
+}
+
+/** Recherche par titre ou ingrédients, insensible aux accents */
+function searchRecipes(query) {
+  const terms = normalize(query).trim().split(/\s+/).filter(Boolean);
+  if (!terms.length) return recipes.slice();
+  return recipes.filter((r) => {
+    const hay = normalize(r.title + ' ' + r.ingredients.join(' '));
+    return terms.every((t) => hay.includes(t));
+  });
+}
+
+/** Affiche la grille (2 colonnes équilibrées) */
+function renderRecipes() {
+  const grid = $('#grid');
+  const empty = $('#empty');
+  const list = filteredRecipes();
+  renderSeasonBar();
+  renderSummary(list.length);
+  const active = activeFilterCount();
+  $('#filter-badge').hidden = !active;
+  $('#filter-badge').textContent = active;
+  $('#filter-count').textContent = `${list.length} recette${list.length > 1 ? 's' : ''} correspond${list.length > 1 ? 'ent' : ''}`;
+  $('#filter-apply').textContent = `Voir ${list.length} recette${list.length > 1 ? 's' : ''}`;
+  grid.removeAttribute('aria-busy');
+
+  if (!list.length) {
+    grid.hidden = true;
+    grid.innerHTML = '';
+    empty.hidden = false;
+    empty.innerHTML = recipes.length
+      ? `<div class="empty-illu" aria-hidden="true"><span>🧂</span><span>🥕</span>🔍</div>
+         <h2>Aucune recette trouvée</h2>
+         <p>Rien ne correspond à cette recherche ou à ces filtres.</p>
+         <button class="btn btn-primary" type="button" data-reset>Effacer les filtres</button>`
+      : `<div class="empty-illu" aria-hidden="true"><span>🥄</span><span>🌿</span>🍽️</div>
+         <h2>Votre carnet est vide</h2>
+         <p>Ajoutez votre première recette. Elle reste enregistrée sur ce téléphone, même hors connexion.</p>
+         <button class="btn btn-primary" type="button" data-add>＋ Ajouter une recette</button>`;
+    return;
+  }
+
+  empty.hidden = true;
+  grid.hidden = false;
+  const cols = [[], []];
+  const heights = [0, 0];
+  list.forEach((r, i) => {
+    const ratio = RATIOS[hash(r.id) % 2];
+    const c = heights[0] <= heights[1] ? 0 : 1;
+    heights[c] += (ratio === '3 / 4' ? 1.33 : 1.25) + Math.ceil(r.title.length / 16) * 0.14 + 0.5;
+    cols[c].push(cardHTML(r, ratio, i < 4));
+  });
+  grid.innerHTML = cols.map((c) => `<div class="col">${c.join('')}</div>`).join('');
+  // images déjà en cache : affichage immédiat, sans fondu
+  $$('img', grid).forEach((img) => { if (img.complete && img.naturalWidth) img.parentElement.classList.add('is-loaded'); });
+  updateSelectionUI();
+}
+
+function cardHTML(r, ratio, eager) {
+  const cat = CATEGORIES[r.category] || CATEGORIES.Plat;
+  const seasons = recipeSeasons(r);
+  const seasonTxt = seasons.length === 4 ? '' : seasons.map((s) => SEASONS[s].emoji).join('');
+  const label = `${r.title}, ${cat.label}, ${formatTime(r.minutes)}`;
+  return `<article class="card${shopping.selected.includes(r.id) ? ' is-selected' : ''}" data-id="${esc(r.id)}">
+    <div class="swipe-hint" aria-hidden="true">🗑️ Supprimer</div>
+    <div class="card-inner" role="button" tabindex="0" aria-label="${esc(label)}">
+      ${mediaHTML(r, { ratio, eager })}
+      <div class="card-body">
+        <h3 class="card-title">${esc(r.title)}</h3>
+        <div class="meta"><span class="badge" data-cat="${esc(r.category)}">${cat.emoji} ${esc(cat.label)}</span><span class="time">⏱️ ${formatTime(r.minutes)}</span>${seasonTxt ? `<span aria-hidden="true">${seasonTxt}</span>` : ''}</div>
+      </div>
+    </div>
+    <button class="select-btn" type="button" aria-pressed="${shopping.selected.includes(r.id)}" aria-label="Liste de courses : ${esc(r.title)}"><span class="circle" aria-hidden="true"><span class="tick">✓</span></span></button>
+  </article>`;
+}
+
+/** Ouvre la fiche détaillée (from = écran à remplacer, ex. formulaire) */
+function viewRecipe(id, from = null) {
+  const r = recipes.find((x) => x.id === id);
+  if (!r) return;
+  viewingId = id;
+  const cat = CATEGORIES[r.category] || CATEGORIES.Plat;
+  const seasons = recipeSeasons(r);
+  const ing = r.ingredients.length
+    ? `<ul class="ing-list">${r.ingredients.map((x) => `<li><label class="ing"><input type="checkbox"><span>${esc(x)}</span></label></li>`).join('')}</ul>`
+    : '<p class="muted-note">Aucun ingrédient renseigné.</p>';
+  const steps = r.steps.length
+    ? `<ol class="steps">${r.steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>`
+    : '<p class="muted-note">Aucune étape renseignée.</p>';
+  let sourceHost = '';
+  try { sourceHost = r.source ? new URL(r.source).hostname.replace(/^www\./, '') : ''; } catch (e) { sourceHost = ''; }
+
+  $('#detail-body').innerHTML = `
+    <div class="hero-wrap">
+      ${mediaHTML(r, { className: 'hero', eager: true })}
+      <button class="icon-btn hero-close" type="button" data-close aria-label="Fermer">✕</button>
+    </div>
+    <div class="detail-content">
+      <h2 id="detail-title" tabindex="-1">${esc(r.title)}</h2>
+      <div class="meta">
+        <span class="badge" data-cat="${esc(r.category)}">${cat.emoji} ${esc(cat.label)}</span>
+        <span class="time">⏱️ ${formatTime(r.minutes)}</span>
+        ${r.servings ? `<span>👥 ${r.servings} pers.</span>` : ''}
+      </div>
+      <button class="btn btn-soft detail-shop" type="button" id="detail-shop" aria-pressed="${shopping.selected.includes(r.id)}">${shopping.selected.includes(r.id) ? '✓ Dans la liste de courses' : '🛒 Ajouter à la liste de courses'}</button>
+      <p class="detail-seasons">${seasons.length === 4 ? '🗓️ Toute l’année' : seasons.map((s) => `${SEASONS[s].emoji} ${SEASONS[s].label}`).join(' · ')}</p>
+      <section class="section"><h3>🧺 Ingrédients</h3>${ing}</section>
+      <section class="section"><h3>👩‍🍳 Étapes</h3>${steps}</section>
+      ${sourceHost ? `<a class="btn btn-soft source-link" href="${esc(r.source)}" target="_blank" rel="noopener noreferrer">🔗 Recette complète sur ${esc(sourceHost)}</a>` : ''}
+    </div>`;
+  $('#detail-body').scrollTop = 0;
+  from ? swapLayer(from, $('#detail-sheet')) : openLayer($('#detail-sheet'));
+}
+
+/** Supprime toutes les recettes (confirmation) */
+async function clearAllRecipes() {
+  if (!recipes.length) return false;
+  const choice = await openActionSheet({
+    title: 'Tout effacer ?',
+    message: `Vos ${recipes.length} recettes seront supprimées de ce téléphone. Action irréversible.`,
+    actions: [{ key: 'clear', label: '🧹 Tout effacer', danger: true }]
+  });
+  if (choice !== 'clear') return false;
+  recipes = [];
+  saveRecipes();
+  clearSelection();
+  resetFilters();
+  renderRecipes();
+  showToast('Toutes les recettes ont été supprimées');
+  return true;
+}
+
+/* =====================================================================
+   FILTRES
+   ===================================================================== */
+function activeFilterCount() {
+  return (filters.season ? 1 : 0) + (filters.category ? 1 : 0) + (filters.maxTime ? 1 : 0);
+}
+function resetFilters() {
+  Object.assign(filters, { query: '', season: '', category: '', maxTime: 0 });
+  $('#search-input').value = '';
+  closeSearch();
+  renderFilterOptions();
+}
+function renderSeasonBar() {
+  const now = currentSeason();
+  $('#season-bar').innerHTML = SEASON_KEYS.map((k) => `
+    <button class="season-btn" type="button" data-season="${k}" aria-pressed="${filters.season === k}"
+      aria-label="${SEASONS[k].label}${k === now ? ', saison en cours' : ''}">
+      <span class="emo" aria-hidden="true">${SEASONS[k].emoji}</span>${SEASONS[k].label}
+      ${k === now ? '<span class="now-dot" aria-hidden="true"></span>' : ''}
+    </button>`).join('');
+}
+function renderSummary(count) {
+  const pills = [];
+  if (filters.query) pills.push(['query', `🔍 ${filters.query}`]);
+  if (filters.season) pills.push(['season', `${SEASONS[filters.season].emoji} ${SEASONS[filters.season].label}`]);
+  if (filters.category) pills.push(['category', `${CATEGORIES[filters.category].emoji} ${CATEGORIES[filters.category].label}`]);
+  if (filters.maxTime) pills.push(['maxTime', `⏱️ ≤ ${filters.maxTime} min`]);
+  $('#summary').innerHTML = `<p class="count">${count} recette${count > 1 ? 's' : ''}</p>` +
+    pills.map(([k, l]) => `<button class="pill" type="button" data-clear="${k}" aria-label="Retirer le filtre ${esc(l)}">${esc(l)} ✕</button>`).join('');
+}
+function renderFilterOptions() {
+  const opt = (name, value, label, checked, extra = '') =>
+    `<label class="opt ${extra}"><input type="radio" name="${name}" value="${value}" ${checked ? 'checked' : ''}><span>${esc(label)}</span></label>`;
+  $('#flt-seasons').innerHTML = opt('flt-season', '', 'Toutes', !filters.season) +
+    SEASON_KEYS.map((k) => opt('flt-season', k, `${SEASONS[k].emoji} ${SEASONS[k].label}`, filters.season === k)).join('');
+  $('#flt-categories').innerHTML = opt('flt-category', '', 'Toutes', !filters.category) +
+    Object.entries(CATEGORIES).map(([k, c]) => opt('flt-category', k, `${c.emoji} ${c.label}`, filters.category === k)).join('');
+  $('#flt-times').innerHTML = TIME_FILTERS.map(([v, l]) => opt('flt-time', v, l, filters.maxTime === v)).join('');
+}
+
+/* =====================================================================
+   RECHERCHE (dans le header)
+   ===================================================================== */
+function openSearch() {
+  $('#bar-main').hidden = true;
+  $('#bar-search').hidden = false;
+  $('#search-input').focus();
+}
+function closeSearch() {
+  $('#bar-search').hidden = true;
+  $('#bar-main').hidden = false;
+}
+
+/* =====================================================================
+   ÉCRANS & HISTORIQUE (le bouton retour Android ferme l'écran ouvert)
+   ===================================================================== */
+const layers = [];
+let historyEntry = false;
+let ignorePop = false;
+const lastFocus = new Map();
+
+function syncLayersState() {
+  const open = layers.length > 0;
+  document.documentElement.classList.toggle('is-locked', open);
+  $('#app').inert = open;
+  if (open) {
+    layers.forEach((l, i) => { l.inert = i !== layers.length - 1; });
+    if (!historyEntry) {
+      try { history.pushState({ recettesLayer: true }, ''); historyEntry = true; } catch (e) { /* historique indisponible */ }
+    }
+  } else if (historyEntry) {
+    // différé : si un autre écran s'ouvre juste après (enchaînement), on garde l'entrée
+    setTimeout(() => {
+      if (!layers.length && historyEntry) {
+        historyEntry = false;
+        ignorePop = true;
+        try { history.back(); } catch (e) { ignorePop = false; }
+      }
+    }, 0);
+  }
+}
+function openLayer(el) {
+  if (layers.includes(el)) return;
+  lastFocus.set(el, document.activeElement);
+  el.hidden = false;
+  layers.push(el);
+  syncLayersState();
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    el.classList.add('is-open');
+    const target = el.querySelector('[tabindex="-1"]');
+    if (target) target.focus({ preventScroll: true });
+  }));
+}
+function closeLayer(el, { restoreFocus = true } = {}) {
+  const i = layers.indexOf(el);
+  if (i < 0) return;
+  layers.splice(i, 1);
+  el.classList.remove('is-open');
+  if (el.id === 'detail-sheet') viewingId = null;
+  if (el.id === 'form-sheet') editingId = null;
+  if (el._resolve) { el._resolve(el._choice ?? null); el._resolve = null; }
+  setTimeout(() => { if (!layers.includes(el)) el.hidden = true; }, 300);
+  syncLayersState();
+  const f = lastFocus.get(el);
+  if (restoreFocus && f && document.contains(f)) f.focus({ preventScroll: true });
+}
+function swapLayer(from, to) {
+  closeLayer(from, { restoreFocus: false });
+  openLayer(to);
+}
+window.addEventListener('popstate', () => {
+  if (ignorePop) { ignorePop = false; return; }
+  historyEntry = false;
+  const top = layers[layers.length - 1];
+  if (top) closeLayer(top);
+});
+
+/** Action sheet générique → Promise(clé choisie ou null) */
+function openActionSheet({ title, message = '', actions }) {
+  const el = $('#action-sheet');
+  if (layers.includes(el)) closeLayer(el);
+  $('#action-title').textContent = title;
+  $('#action-msg').textContent = message;
+  $('#action-msg').hidden = !message;
+  $('#action-buttons').innerHTML = actions.map((a) =>
+    `<button class="action-btn${a.danger ? ' is-danger' : ''}" type="button" data-key="${esc(a.key)}">${esc(a.label)}</button>`).join('');
+  return new Promise((resolve) => {
+    el._choice = null;
+    el._resolve = resolve;
+    openLayer(el);
+  });
+}
+
+/* =====================================================================
+   FORMULAIRE
+   ===================================================================== */
+function openForm(id = null, from = null) {
+  const form = $('#recipe-form');
+  form.reset();
+  $('#field-title').classList.remove('is-invalid');
+  $('#title-error').hidden = true;
+  const r = id ? recipes.find((x) => x.id === id) : null;
+  $('#form-title').textContent = r ? 'Modifier la recette' : 'Nouvelle recette';
+  $('#f-categories').innerHTML = Object.entries(CATEGORIES).map(([k, c]) =>
+    `<label class="opt"><input type="radio" name="category" value="${k}" ${(r ? r.category : 'Plat') === k ? 'checked' : ''}><span>${c.emoji} ${c.label}</span></label>`).join('');
+  $('#f-seasons').innerHTML = SEASON_KEYS.map((k) =>
+    `<label class="opt season"><input type="checkbox" name="season" value="${k}" ${r && (r.seasons || []).includes(k) ? 'checked' : ''}><span>${SEASONS[k].emoji} ${SEASONS[k].label}</span></label>`).join('');
+  if (r) {
+    $('#f-title').value = r.title;
+    $('#f-image').value = r.image || '';
+    const hours = r.minutes >= 60 && r.minutes % 60 === 0;
+    $('#f-time').value = r.minutes ? (hours ? r.minutes / 60 : r.minutes) : '';
+    $(`input[name="unit"][value="${hours ? 'h' : 'min'}"]`).checked = true;
+    $('#f-servings').value = r.servings || 2;
+    $('#f-ingredients').value = r.ingredients.join('\n');
+    $('#f-steps').value = r.steps.join('\n');
+    $('#f-source').value = r.source || '';
+  }
+  checkPhoto();
+  form.scrollTop = 0;
+  from ? swapLayer(from, $('#form-sheet')) : openLayer($('#form-sheet'));
+  editingId = r ? r.id : null;
+}
+
+// Vérification de l'image en direct, avec message clair en cas d'erreur
+let photoTimer = null;
+let photoToken = 0;
+function checkPhoto() {
+  clearTimeout(photoTimer);
+  const url = $('#f-image').value.trim();
+  const status = $('#photo-status');
+  const preview = $('#photo-preview');
+  const set = (text, cls = '') => { status.textContent = text; status.className = `field-status ${cls}`; };
+  const token = ++photoToken;
+  if (!url) { preview.textContent = '🖼️'; return set('Collez le lien d’une image (.jpg, .png, .webp).'); }
+  if (!/^https?:\/\//i.test(url) || !isValidUrl(url)) { preview.textContent = '⚠️'; return set('Lien invalide : il doit commencer par https://', 'is-error'); }
+  set('⏳ Vérification de l’image…');
+  photoTimer = setTimeout(() => {
+    const test = new Image();
+    test.onload = () => {
+      if (token !== photoToken) return;
+      preview.innerHTML = '';
+      preview.appendChild(test);
+      set('✅ Image trouvée', 'is-ok');
+    };
+    test.onerror = () => {
+      if (token !== photoToken) return;
+      preview.textContent = '⚠️';
+      set('Impossible d’afficher cette image. Vérifiez le lien ; sinon un visuel coloré la remplacera.', 'is-error');
+    };
+    test.src = url;
+  }, 400);
+}
+
+/* =====================================================================
+   TOASTS
+   ===================================================================== */
+function showToast(message, type = 'success', { action = '', onAction = null, duration = 0 } = {}) {
+  const box = $('#toasts');
+  while (box.children.length >= 2) box.firstChild.remove();
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  t.innerHTML = `<span></span>${action ? `<button type="button">${esc(action)}</button>` : ''}`;
+  t.firstChild.textContent = message;
+  const remove = () => { t.classList.add('is-leaving'); setTimeout(() => t.remove(), 200); };
+  if (action) t.querySelector('button').addEventListener('click', () => { remove(); onAction && onAction(); });
+  box.appendChild(t);
+  setTimeout(remove, duration || (action ? 5000 : 2600));
+}
+
+/* =====================================================================
+   GESTES SUR LES CARTES : tap = ouvrir, appui long = menu, swipe gauche = supprimer
+   ===================================================================== */
+function bindCardGestures() {
+  const grid = $('#grid');
+  let g = null;
+  let suppressClick = false;
+
+  const reset = () => {
+    if (!g) return;
+    clearTimeout(g.timer);
+    g.card.classList.remove('is-swiping', 'is-armed');
+    g.inner.style.transform = '';
+    g = null;
+  };
+
+  grid.addEventListener('pointerdown', (e) => {
+    const inner = e.target.closest('.card-inner');
+    const card = inner && inner.closest('.card:not(.skeleton)');
+    if (!card || (e.pointerType === 'mouse' && e.button !== 0) || e.target.closest('.select-btn')) return;
+    suppressClick = false;
+    g = { card, inner, id: card.dataset.id, x: e.clientX, y: e.clientY, mode: null, pid: e.pointerId };
+    g.timer = setTimeout(() => {
+      if (!g || g.mode) return;
+      g.mode = 'long';
+      suppressClick = true;
+      haptic(15);
+      showCardMenu(g.id);
+      reset();
+    }, 480);
+  });
+
+  grid.addEventListener('pointermove', (e) => {
+    if (!g || e.pointerId !== g.pid) return;
+    const dx = e.clientX - g.x;
+    const dy = e.clientY - g.y;
+    if (!g.mode) {
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      clearTimeout(g.timer);
+      if (dx < 0 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+        g.mode = 'swipe';
+        g.card.classList.add('is-swiping');
+        try { g.inner.setPointerCapture(g.pid); } catch (err) { /* ignore */ }
+      } else {
+        g.mode = 'scroll';
+        return;
+      }
+    }
+    if (g.mode === 'swipe') {
+      const x = Math.min(0, dx);
+      g.inner.style.transform = `translateX(${x}px)`;
+      const armed = -x > g.card.offsetWidth * 0.45;
+      if (armed && !g.card.classList.contains('is-armed')) haptic(8);
+      g.card.classList.toggle('is-armed', armed);
+    }
+  });
+
+  const end = (e) => {
+    if (!g || e.pointerId !== g.pid) return;
+    clearTimeout(g.timer);
+    if (g.mode === 'swipe') {
+      suppressClick = true;
+      if (g.card.classList.contains('is-armed') && e.type === 'pointerup') {
+        const { inner, id, card } = g;
+        card.classList.replace('is-swiping', 'is-removing');
+        inner.style.transform = 'translateX(-110%)';
+        g = null;
+        setTimeout(() => deleteRecipe(id, { confirm: false }), 200);
+        return;
+      }
+    }
+    reset();
+  };
+  grid.addEventListener('pointerup', end);
+  grid.addEventListener('pointercancel', end);
+  grid.addEventListener('contextmenu', (e) => { if (e.target.closest('.card')) e.preventDefault(); });
+
+  grid.addEventListener('click', (e) => {
+    const sel = e.target.closest('.select-btn');
+    if (sel) {
+      const added = toggleRecipeSelection(sel.closest('.card').dataset.id);
+      if (added && shopping.selected.length === 1) showToast('🛒 Liste de courses créée : touchez la barre verte en bas');
+      return;
+    }
+    const inner = e.target.closest('.card-inner');
+    if (!inner || inner.closest('.skeleton')) return;
+    if (suppressClick) { suppressClick = false; return; }
+    viewRecipe(inner.closest('.card').dataset.id);
+  });
+  grid.addEventListener('keydown', (e) => {
+    const inner = e.target.closest('.card-inner');
+    if (!inner) return;
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); viewRecipe(inner.closest('.card').dataset.id); }
+    if (e.key === 'Delete' || e.key === 'Backspace') deleteRecipe(inner.closest('.card').dataset.id);
+  });
+}
+
+async function showCardMenu(id) {
+  const r = recipes.find((x) => x.id === id);
+  if (!r) return;
+  const choice = await openActionSheet({
+    title: r.title,
+    actions: [
+      { key: 'view', label: '👁️ Voir la recette' },
+      { key: 'shop', label: shopping.selected.includes(id) ? '✓ Retirer de la liste de courses' : '🛒 Ajouter à la liste de courses' },
+      { key: 'edit', label: '✏️ Modifier' },
+      { key: 'delete', label: '🗑️ Supprimer', danger: true }
+    ]
+  });
+  if (choice === 'view') viewRecipe(id);
+  if (choice === 'edit') openForm(id);
+  if (choice === 'delete') deleteRecipe(id);
+  if (choice === 'shop') toggleRecipeSelection(id);
+}
+
+/* =====================================================================
+   LISTE DE COURSES
+   ===================================================================== */
+const SHOPPING_KEY = 'mesRecettes.shopping';
+const TARGET_SERVINGS = 2;
+// selected : ids des recettes cochées ; checked : articles achetés ; removed : articles retirés
+let shopping = { selected: [], checked: [], removed: [] };
+
+/* ---------- Analyse d'un ingrédient ---------- */
+const FRACTIONS = { '½': 0.5, '¼': 0.25, '¾': 0.75, '⅓': 1 / 3, '⅔': 2 / 3, '⅛': 0.125 };
+// [expression, unité normalisée, facteur de conversion]
+const UNIT_RULES = [
+  [/^(?:kg|kilos?|kilogrammes?)\b\.?/i, 'g', 1000],
+  [/^(?:mg|milligrammes?)\b\.?/i, 'g', 0.001],
+  [/^(?:g|gr|grs|grammes?)(?![a-zà-ÿ])\.?/i, 'g', 1],
+  [/^(?:ml|millilitres?)\b\.?/i, 'ml', 1],
+  [/^(?:cl|centilitres?)\b\.?/i, 'ml', 10],
+  [/^(?:dl|décilitres?|decilitres?)\b\.?/i, 'ml', 100],
+  [/^(?:l|litres?)(?![a-zà-ÿ'’])\.?/i, 'ml', 1000],
+  [/^(?:c\.?\s*à\s*s\.?|càs|cas|cs|cuill?[eè]res?\s+à\s+soupe|cuil\.?\s+à\s+soupe|c\.\s*à\s*soupe)(?![a-zà-ÿ])/i, 'c. à s.', 1],
+  [/^(?:c\.?\s*à\s*c\.?|càc|cac|cc|cuill?[eè]res?\s+à\s+café|cuil\.?\s+à\s+café|c\.\s*à\s*café)(?![a-zà-ÿ])/i, 'c. à c.', 1],
+  [/^pinc[ée]es?\b\.?/i, 'pincée', 1],
+  [/^gousses?\b/i, 'gousse', 1],
+  [/^tranches?\b/i, 'tranche', 1],
+  [/^bottes?\b/i, 'botte', 1],
+  [/^poign[ée]es?\b/i, 'poignée', 1],
+  [/^brins?\b/i, 'brin', 1],
+  [/^quartiers?\b/i, 'quartier', 1],
+  [/^sachets?\b/i, 'sachet', 1],
+  [/^bo[iî]tes?\b/i, 'boîte', 1],
+  [/^pots?\b/i, 'pot', 1],
+  [/^feuilles?\b/i, 'feuille', 1],
+  [/^tasses?\b/i, 'tasse', 1],
+  [/^verres?\b/i, 'verre', 1],
+  [/^cm\b/i, 'cm', 1],
+  [/^(?:pi[èe]ces?|pcs?)\b\.?/i, '', 1]
+];
+
+function parseNumber(txt) {
+  const t = txt.trim();
+  let m = /^(\d+)\s+(\d+)\/(\d+)$/.exec(t);                 // 1 1/2
+  if (m) return +m[1] + m[2] / m[3];
+  m = /^(\d+)\/(\d+)$/.exec(t);                             // 1/2
+  if (m) return m[1] / m[2];
+  m = /^(\d+(?:[.,]\d+)?)?\s*([½¼¾⅓⅔⅛])?$/.exec(t);         // 2 | 3,5 | 1½ | ½
+  if (m && (m[1] || m[2])) return (m[1] ? parseFloat(m[1].replace(',', '.')) : 0) + (m[2] ? FRACTIONS[m[2]] : 0);
+  return null;
+}
+
+/** "200g farine" → { qty: 200, unit: "g", name: "farine" } (qty null si aucune quantité) */
+function parseIngredient(ingredientText) {
+  let text = String(ingredientText || '').replace(/\s+/g, ' ').trim();
+  let name = text;
+  let qtyPart = text;
+  // Format des recettes Jow : "Oignon jaune · 700 g"
+  const dot = text.lastIndexOf(' · ');
+  if (dot > 0) { name = text.slice(0, dot); qtyPart = text.slice(dot + 3); }
+
+  const m = /^(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:[.,]\d+)?\s*[½¼¾⅓⅔⅛]?|[½¼¾⅓⅔⅛])\s*/.exec(qtyPart);
+  if (!m) return { qty: null, unit: '', name: text };
+  let qty = parseNumber(m[1]);
+  let rest = qtyPart.slice(m[0].length).replace(/^x\s*/i, '');
+  let unit = '';
+  for (const [re, u, factor] of UNIT_RULES) {
+    const um = re.exec(rest);
+    if (um) { unit = u; qty *= factor; rest = rest.slice(um[0].length).trim(); break; }
+  }
+  if (dot < 0) name = rest.replace(/^(?:de\s+|d['’]\s*)/i, '').trim() || text;
+  return { qty: qty > 0 ? qty : null, unit, name };
+}
+
+/* ---------- Calcul pour 2 personnes ---------- */
+function calculateIngredientsForTwo(ingredients, originalServings) {
+  const servings = Number(originalServings) > 0 ? Number(originalServings) : TARGET_SERVINGS;
+  const factor = TARGET_SERVINGS / servings;
+  return (ingredients || []).map((line) => {
+    const p = parseIngredient(line);
+    return { ...p, qty: p.qty === null ? null : p.qty * factor };
+  });
+}
+
+/* ---------- Fusion des ingrédients identiques ---------- */
+function ingredientKey(name) {
+  return normalize(String(name).replace(/œ/gi, 'oe').replace(/æ/gi, 'ae'))
+    .replace(/[^a-z0-9()\s]/g, ' ')
+    .split(/\s+/).filter(Boolean)
+    .map((w) => (w.length > 3 ? w.replace(/(?:s|x)$/, '') : w))
+    .join(' ');
+}
+function mergeIngredients(allIngredients) {
+  const map = new Map();
+  allIngredients.forEach(({ qty, unit, name, recipe }) => {
+    const key = ingredientKey(name);
+    if (!key) return;
+    if (!map.has(key)) map.set(key, { key, name, amounts: new Map(), recipes: new Set() });
+    const item = map.get(key);
+    if (recipe) item.recipes.add(recipe);
+    if (qty !== null) item.amounts.set(unit, (item.amounts.get(unit) || 0) + qty);
+  });
+  return [...map.values()].sort((a, b) => a.key.localeCompare(b.key, 'fr'));
+}
+
+/* ---------- Affichage des quantités ---------- */
+function fractionText(v) {
+  const q = Math.max(0.25, Math.round(v * 4) / 4);
+  const whole = Math.floor(q);
+  const frac = { 0.25: '¼', 0.5: '½', 0.75: '¾' }[+(q - whole).toFixed(2)] || '';
+  return whole ? `${whole}${frac ? ' ' + frac : ''}` : frac;
+}
+function decimalText(v, digits = 1) {
+  return String(+v.toFixed(digits)).replace('.', ',');
+}
+const PLURAL_UNITS = ['pincée', 'gousse', 'tranche', 'botte', 'poignée', 'brin', 'quartier', 'sachet', 'boîte', 'pot', 'feuille', 'tasse', 'verre'];
+// < 10 : une décimale ; ≥ 100 : arrondi à 5 près ; au-delà de 1000 : kg / l
+const metricText = (q) => (q < 10 ? decimalText(q) : String(q >= 100 ? Math.round(q / 5) * 5 : Math.round(q)));
+function amountText(qty, unit) {
+  if (unit === 'g') return qty >= 1000 ? `${decimalText(qty / 1000)} kg` : `${metricText(qty)} g`;
+  if (unit === 'ml') return qty >= 1000 ? `${decimalText(qty / 1000)} l` : `${metricText(qty)} ml`;
+  if (unit === 'c. à s.' || unit === 'c. à c.') return `${fractionText(Math.round(qty * 2) / 2)} ${unit}`;
+  if (unit === 'cm') return `${decimalText(qty)} cm`;
+  // Articles vendus à l'unité : au moins 1 → arrondi à l'unité supérieure (3 tranches, pas 2 ¾)
+  const countable = ['', 'tranche', 'gousse', 'sachet', 'boîte', 'pot', 'feuille', 'quartier', 'tasse', 'verre'].includes(unit);
+  if (countable && qty >= 1) qty = Math.ceil(qty - 0.15);
+  const n = fractionText(qty);
+  if (!unit) return n;
+  return `${n} ${PLURAL_UNITS.includes(unit) && qty > 1.1 ? unit + 's' : unit}`;
+}
+function lowerFirst(s) {
+  return /^[A-ZÀ-ÖØ-ÞŒ][a-zà-ÿœ]/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s;
+}
+function pluralizeName(name) {
+  return name.replace(/^([^\s(]+)/, (w) => (/[sxz]$/i.test(w) ? w : w + 's'));
+}
+/** Texte d'un article : "250 g farine", "5 œufs", "moutarde" */
+function itemText(item) {
+  const name = lowerFirst(item.name);
+  if (!item.amounts.size) return name;
+  const parts = [...item.amounts].map(([unit, qty]) => amountText(qty, unit));
+  const onlyPieces = item.amounts.size === 1 && item.amounts.has('');
+  const displayName = onlyPieces && item.amounts.get('') > 1.1 ? pluralizeName(name) : name;
+  return `${parts.join(' + ')} ${displayName}`;
+}
+
+/* ---------- Sélection ---------- */
+function selectedRecipes() {
+  const ids = new Set(shopping.selected);
+  return recipes.filter((r) => ids.has(r.id));
+}
+function toggleRecipeSelection(recipeId) {
+  const i = shopping.selected.indexOf(recipeId);
+  if (i >= 0) shopping.selected.splice(i, 1);
+  else shopping.selected.push(recipeId);
+  haptic(8);
+  saveShoppingListState();
+  updateSelectionUI();
+  return i < 0;
+}
+function clearSelection() {
+  shopping = { selected: [], checked: [], removed: [] };
+  saveShoppingListState();
+  updateSelectionUI();
+}
+
+/* ---------- Génération de la liste ---------- */
+function generateShoppingList() {
+  const all = [];
+  selectedRecipes().forEach((r) => {
+    calculateIngredientsForTwo(r.ingredients, r.servings).forEach((p) => all.push({ ...p, recipe: r.title }));
+  });
+  const removed = new Set(shopping.removed);
+  const checked = new Set(shopping.checked);
+  const items = mergeIngredients(all).map((it) => ({ ...it, text: itemText(it), bought: checked.has(it.key) }));
+  return {
+    visible: items.filter((it) => !removed.has(it.key)),
+    removedCount: items.filter((it) => removed.has(it.key)).length
+  };
+}
+
+function renderShoppingList() {
+  const sel = selectedRecipes();
+  const body = $('#shop-body');
+  const count = $('#shop-progress');
+  if (!sel.length) {
+    count.textContent = '';
+    body.innerHTML = `<div class="empty"><div class="empty-illu" aria-hidden="true"><span>🥕</span><span>🧀</span>🛒</div>
+      <h2>Sélectionne des recettes pour voir ta liste de courses</h2>
+      <p>Touche le cercle ◯ en haut à gauche d’une recette.</p>
+      <button class="btn btn-primary" type="button" data-close>Choisir des recettes</button></div>`;
+    return;
+  }
+  const { visible, removedCount } = generateShoppingList();
+  const bought = visible.filter((i) => i.bought).length;
+  count.textContent = `${bought}/${visible.length}`;
+  const ordered = [...visible.filter((i) => !i.bought), ...visible.filter((i) => i.bought)];
+  body.innerHTML = `
+    <div class="shop-recipes" aria-label="Recettes sélectionnées">
+      ${sel.map((r) => `<button class="pill shop-recipe" type="button" data-unselect="${esc(r.id)}" aria-label="Retirer ${esc(r.title)} de la liste">
+        ${esc(r.title)} <small>${r.servings && r.servings !== TARGET_SERVINGS ? `${r.servings}→2 pers.` : '2 pers.'}</small> ✕</button>`).join('')}
+    </div>
+    <div class="shop-progress-bar" role="progressbar" aria-label="Articles achetés" aria-valuemin="0" aria-valuemax="${visible.length}" aria-valuenow="${bought}">
+      <span style="width:${visible.length ? (bought / visible.length) * 100 : 0}%"></span>
+    </div>
+    <p class="shop-hint">👉 Glisser à droite : acheté<br>✋ Appui long : retirer</p>
+    <ul class="shop-list">
+      ${ordered.map((it) => `<li class="shop-row${it.bought ? ' is-bought' : ''}" data-key="${esc(it.key)}">
+        <label class="shop-item">
+          <input type="checkbox" ${it.bought ? 'checked' : ''}>
+          <span class="shop-text"><span class="shop-name">${esc(it.text)}</span>
+          <span class="shop-from">${esc([...it.recipes].join(', '))}</span></span>
+        </label>
+      </li>`).join('')}
+    </ul>
+    ${removedCount ? `<button class="btn btn-soft shop-restore" type="button" id="shop-restore">↩️ Réafficher ${removedCount} article${removedCount > 1 ? 's' : ''} retiré${removedCount > 1 ? 's' : ''}</button>` : ''}`;
+}
+
+/** Met à jour tout ce qui dépend de la sélection */
+function updateSelectionUI() {
+  const ids = new Set(shopping.selected);
+  const n = selectedRecipes().length;
+  $$('#grid .card[data-id]').forEach((card) => {
+    const on = ids.has(card.dataset.id);
+    card.classList.toggle('is-selected', on);
+    const btn = card.querySelector('.select-btn');
+    if (btn) btn.setAttribute('aria-pressed', on);
+  });
+  $('#sel-count').hidden = !n;
+  $('#sel-count').textContent = `✓ ${n} sélectionnée${n > 1 ? 's' : ''}`;
+  $('#sel-count').setAttribute('aria-label', `${n} recette${n > 1 ? 's' : ''} sélectionnée${n > 1 ? 's' : ''}`);
+  document.documentElement.classList.toggle('has-cart', n > 0);
+  $('#cart-bar').hidden = !n;
+  if (n) {
+    const { visible } = generateShoppingList();
+    const left = visible.filter((i) => !i.bought).length;
+    $('#cart-sub').textContent = `${n} recette${n > 1 ? 's' : ''} · ${left} article${left > 1 ? 's' : ''}`;
+    $('#cart-open').setAttribute('aria-label', `Liste de courses : ${n} recette${n > 1 ? 's' : ''}, ${left} article${left > 1 ? 's' : ''} à acheter`);
+  }
+  const detailToggle = $('#detail-shop');
+  if (detailToggle && viewingId) {
+    const on = ids.has(viewingId);
+    detailToggle.textContent = on ? '✓ Dans la liste de courses' : '🛒 Ajouter à la liste de courses';
+    detailToggle.setAttribute('aria-pressed', on);
+  }
+  if (layers.includes($('#shop-sheet'))) renderShoppingList();
+}
+
+/* ---------- Copier / partager ---------- */
+function shoppingText() {
+  const { visible } = generateShoppingList();
+  return [`🛒 Liste de courses (pour ${TARGET_SERVINGS} personnes)`, ...visible.map((i) => `${i.bought ? '[x]' : '[]'} ${i.text}`)].join('\n');
+}
+function copyWithTextarea(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px';
+  document.body.appendChild(ta);
+  ta.focus({ preventScroll: true });
+  ta.select();
+  ta.setSelectionRange(0, text.length);
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+  ta.blur();
+  ta.remove();
+  return ok;
+}
+async function copyShoppingList() {
+  const text = shoppingText();
+  // 1) copie synchrone, dans le geste (la plus fiable sur iOS Safari)
+  let ok = copyWithTextarea(text);
+  // 2) API presse-papier moderne
+  if (!ok && navigator.clipboard && window.isSecureContext) {
+    try { await navigator.clipboard.writeText(text); ok = true; } catch (e) { ok = false; }
+  }
+  if (ok) { haptic(20); showToast('✅ Liste copiée !', 'success', { duration: 2000 }); return true; }
+  // 3) Dernier recours : feuille de partage native (SMS, WhatsApp…)
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Liste de courses', text }); return true; } catch (e) { if (e && e.name === 'AbortError') return false; }
+  }
+  showToast('Copie impossible sur cet appareil. Réessayez ou faites une capture d’écran de la liste.', 'error');
+  return false;
+}
+
+/* ---------- Sauvegarde ---------- */
+function saveShoppingListState() {
+  try { localStorage.setItem(SHOPPING_KEY, JSON.stringify(shopping)); } catch (e) { /* stockage indisponible : état en mémoire */ }
+}
+function loadShoppingListState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SHOPPING_KEY) || 'null');
+    if (s && typeof s === 'object') {
+      const arr = (v) => (Array.isArray(v) ? v.map(String) : []);
+      shopping = { selected: arr(s.selected), checked: arr(s.checked), removed: arr(s.removed) };
+    }
+  } catch (e) { shopping = { selected: [], checked: [], removed: [] }; }
+}
+
+function setItemBought(key, bought) {
+  shopping.checked = shopping.checked.filter((k) => k !== key);
+  if (bought) shopping.checked.push(key);
+  haptic(8);
+  saveShoppingListState();
+  updateSelectionUI();
+}
+function removeItem(key) {
+  if (!shopping.removed.includes(key)) shopping.removed.push(key);
+  haptic(15);
+  saveShoppingListState();
+  updateSelectionUI();
+  showToast('Article retiré de la liste', 'success', {
+    action: 'Annuler',
+    onAction: () => { shopping.removed = shopping.removed.filter((k) => k !== key); saveShoppingListState(); updateSelectionUI(); }
+  });
+}
+
+/* ---------- Événements de la liste (swipe droite = acheté, appui long = retirer) ---------- */
+function bindShoppingEvents() {
+  $('#cart-open').addEventListener('click', () => { renderShoppingList(); openLayer($('#shop-sheet')); });
+  $('#shop-copy').addEventListener('click', copyShoppingList);
+  $('#shop-copy-top').addEventListener('click', copyShoppingList);
+  $('#shop-reset').addEventListener('click', () => {
+    shopping.checked = [];
+    shopping.removed = [];
+    saveShoppingListState();
+    updateSelectionUI();
+    showToast('↺ Liste remise à zéro');
+  });
+  $('#shop-clear').addEventListener('click', async () => {
+    const choice = await openActionSheet({
+      title: 'Tout désélectionner ?',
+      message: 'Les recettes seront retirées de la liste de courses (elles restent dans votre carnet).',
+      actions: [{ key: 'clear', label: '✕ Tout désélectionner', danger: true }]
+    });
+    if (choice !== 'clear') return;
+    clearSelection();
+    closeLayer($('#shop-sheet'));
+    showToast('Liste de courses vidée');
+  });
+
+  const body = $('#shop-body');
+  body.addEventListener('click', (e) => {
+    const un = e.target.closest('[data-unselect]');
+    if (un) { toggleRecipeSelection(un.dataset.unselect); return; }
+    if (e.target.closest('#shop-restore')) { shopping.removed = []; saveShoppingListState(); updateSelectionUI(); }
+  });
+  body.addEventListener('change', (e) => {
+    const row = e.target.closest('.shop-row');
+    if (row) setItemBought(row.dataset.key, e.target.checked);
+  });
+
+  let g = null;
+  let suppress = false;
+  const reset = () => { if (!g) return; clearTimeout(g.timer); g.row.style.transform = ''; g.row.classList.remove('is-swiping', 'is-armed'); g = null; };
+  body.addEventListener('pointerdown', (e) => {
+    const row = e.target.closest('.shop-row');
+    if (!row) return;
+    suppress = false;
+    g = { row, key: row.dataset.key, x: e.clientX, y: e.clientY, mode: null, pid: e.pointerId };
+    g.timer = setTimeout(() => {
+      if (!g || g.mode) return;
+      suppress = true;
+      const key = g.key;
+      reset();
+      removeItem(key);
+    }, 550);
+  });
+  body.addEventListener('pointermove', (e) => {
+    if (!g || e.pointerId !== g.pid) return;
+    const dx = e.clientX - g.x;
+    const dy = e.clientY - g.y;
+    if (!g.mode) {
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      clearTimeout(g.timer);
+      if (dx > 0 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+        g.mode = 'swipe';
+        g.row.classList.add('is-swiping');
+        try { g.row.setPointerCapture(g.pid); } catch (err) { /* ignore */ }
+      } else { g.mode = 'scroll'; return; }
+    }
+    const x = Math.max(0, Math.min(dx, g.row.offsetWidth * 0.6));
+    g.row.style.transform = `translateX(${x}px)`;
+    g.row.classList.toggle('is-armed', x > g.row.offsetWidth * 0.3);
+  });
+  const end = (e) => {
+    if (!g || e.pointerId !== g.pid) return;
+    clearTimeout(g.timer);
+    if (g.mode === 'swipe') {
+      suppress = true;
+      if (g.row.classList.contains('is-armed') && e.type === 'pointerup') {
+        const key = g.key;
+        const bought = !g.row.classList.contains('is-bought');
+        reset();
+        setItemBought(key, bought);
+        return;
+      }
+    }
+    reset();
+  };
+  body.addEventListener('pointerup', end);
+  body.addEventListener('pointercancel', end);
+  body.addEventListener('contextmenu', (e) => { if (e.target.closest('.shop-row')) e.preventDefault(); });
+  // Empêche le clic "fantôme" après un swipe ou un appui long de cocher la case
+  body.addEventListener('click', (e) => {
+    if (suppress && e.target.closest('.shop-row')) { e.preventDefault(); suppress = false; }
+  }, true);
+}
+
+/* =====================================================================
+   ÉVÉNEMENTS
+   ===================================================================== */
+function bindEvents() {
+  $('#fab').addEventListener('click', () => openForm());
+  $('#btn-search').addEventListener('click', openSearch);
+  $('#search-cancel').addEventListener('click', () => {
+    filters.query = '';
+    $('#search-input').value = '';
+    closeSearch();
+    renderRecipes();
+  });
+  let searchTimer = null;
+  $('#search-input').addEventListener('input', (e) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { filters.query = e.target.value.trim(); renderRecipes(); }, 120);
+  });
+  $('#search-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') e.target.blur(); });
+
+  $('#btn-filters').addEventListener('click', () => { renderFilterOptions(); openLayer($('#filter-sheet')); });
+  $('#btn-more').addEventListener('click', async () => {
+    const choice = await openActionSheet({
+      title: 'Gestes rapides',
+      message: 'Appui long sur une recette : menu. Glisser une recette vers la gauche : supprimer (annulable).',
+      actions: [{ key: 'clear', label: '🧹 Tout effacer', danger: true }]
+    });
+    if (choice === 'clear') clearAllRecipes();
+  });
+
+  $('#season-bar').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-season]');
+    if (!b) return;
+    filters.season = filters.season === b.dataset.season ? '' : b.dataset.season;
+    haptic(5);
+    renderRecipes();
+  });
+  $('#summary').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-clear]');
+    if (!b) return;
+    const k = b.dataset.clear;
+    filters[k] = k === 'maxTime' ? 0 : '';
+    if (k === 'query') { $('#search-input').value = ''; closeSearch(); }
+    renderRecipes();
+  });
+  $('#empty').addEventListener('click', (e) => {
+    if (e.target.closest('[data-add]')) openForm();
+    if (e.target.closest('[data-reset]')) { resetFilters(); renderRecipes(); }
+  });
+
+  // Filtres : application immédiate
+  $('#filter-sheet').addEventListener('change', (e) => {
+    const { name, value } = e.target;
+    if (name === 'flt-season') filters.season = value;
+    if (name === 'flt-category') filters.category = value;
+    if (name === 'flt-time') filters.maxTime = Number(value);
+    renderRecipes();
+  });
+  $('#filter-reset').addEventListener('click', () => {
+    Object.assign(filters, { season: '', category: '', maxTime: 0 });
+    renderFilterOptions();
+    renderRecipes();
+  });
+
+  // Formulaire
+  $('#recipe-form').addEventListener('submit', (e) => { e.preventDefault(); addRecipe(); });
+  $('#f-title').addEventListener('input', () => { $('#field-title').classList.remove('is-invalid'); $('#title-error').hidden = true; });
+  $('#f-image').addEventListener('input', checkPhoto);
+  const stepServings = (d) => { const i = $('#f-servings'); i.value = Math.min(30, Math.max(1, (parseInt(i.value, 10) || 2) + d)); haptic(5); };
+  $('#servings-minus').addEventListener('click', () => stepServings(-1));
+  $('#servings-plus').addEventListener('click', () => stepServings(1));
+
+  // Détail
+  $('#detail-edit').addEventListener('click', () => { const id = viewingId; if (id) openForm(id, $('#detail-sheet')); });
+  $('#detail-delete').addEventListener('click', () => viewingId && deleteRecipe(viewingId));
+  $('#detail-body').addEventListener('click', (e) => { if (e.target.closest('#detail-shop') && viewingId) toggleRecipeSelection(viewingId); });
+
+  // Fermeture des écrans
+  $$('.sheet').forEach((s) => s.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) closeLayer(s); }));
+  $('#action-sheet').addEventListener('click', (e) => {
+    const el = $('#action-sheet');
+    const btn = e.target.closest('[data-key]');
+    if (btn) { el._choice = btn.dataset.key; closeLayer(el); }
+    else if (e.target.closest('[data-dismiss]')) closeLayer(el);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && layers.length) closeLayer(layers[layers.length - 1]);
+  });
+
+  // Pas de zoom par pincement (iOS ignore user-scalable=no)
+  document.addEventListener('gesturestart', (e) => e.preventDefault());
+
+  // Synchronisation entre onglets
+  window.addEventListener('storage', (e) => { if (e.key === STORAGE_KEY) { loadRecipes(); renderRecipes(); } });
+
+  bindCardGestures();
+  bindShoppingEvents();
+}
+
+/* =====================================================================
+   PWA : icône + manifest générés à la volée (fichier unique)
+   ===================================================================== */
+function setupPwa() {
+  try {
+    const add = (rel, href, extra = {}) => {
+      const l = document.createElement('link');
+      Object.assign(l, { rel, href }, extra);
+      document.head.appendChild(l);
+    };
+    add('apple-touch-icon', ICON);
+    add('icon', ICON, { type: 'image/png' });
+    const manifest = {
+      name: 'Mes Recettes', short_name: 'Recettes', display: 'standalone', orientation: 'portrait',
+      background_color: '#E7D9C8', theme_color: '#E7D9C8', start_url: location.href.split('#')[0],
+      icons: [{ src: ICON, sizes: '180x180', type: 'image/png' }]
+    };
+    add('manifest', 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(manifest)));
+  } catch (e) { /* optionnel */ }
+}
+
+/* =====================================================================
+   GESTION D'ERREURS GLOBALE : l'app ne doit jamais rester bloquée
+   ===================================================================== */
+let lastErrorToast = 0;
+function reportError(err) {
+  console.error(err);
+  if (Date.now() - lastErrorToast < 4000) return;
+  lastErrorToast = Date.now();
+  try { showToast('Un souci est survenu, mais vos recettes sont en sécurité.', 'error'); } catch (e) { /* rien */ }
+}
+window.addEventListener('error', (e) => { if (e.error) reportError(e.error); });
+window.addEventListener('unhandledrejection', (e) => reportError(e.reason));
+
+/* =====================================================================
+   INITIALISATION
+   ===================================================================== */
+function init() {
+  setupPwa();
+  try {
+    loadRecipes();
+    loadShoppingListState();
+    bindEvents();
+    renderFilterOptions();
+    renderRecipes();
+  } catch (e) {
+    reportError(e);
+    $('#grid').hidden = true;
+    $('#empty').hidden = false;
+    $('#empty').innerHTML = '<div class="empty-illu" aria-hidden="true">🍳</div><h2>Chargement impossible</h2><p>Rechargez la page. Vos recettes restent enregistrées sur ce téléphone.</p><button class="btn btn-primary" type="button" onclick="location.reload()">Recharger</button>';
+  }
+}
+init();
+</script>
+</body>
+</html>
